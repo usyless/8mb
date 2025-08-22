@@ -5,7 +5,7 @@ import { FFmpeg } from '@ffmpeg/ffmpeg';
 let onProgress;
 
 const getFFmpeg = (() => {
-    const baseURL = (window.crossOriginIsolated) ? './ffmpeg/' : './ffmpeg-mt/';
+    const baseURL = (window.crossOriginIsolated) ? './ffmpeg-mt/' : './ffmpeg/';
 
     const ffmpeg = new FFmpeg();
 

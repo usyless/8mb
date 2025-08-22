@@ -16,8 +16,8 @@
   "main": "src/index.js",
   "scripts": {
     "download": "node download-ffmpeg.js",
-    "build-dev": "esbuild src/index.js --bundle --format=esm --platform=browser --outfile=src/index.out.js",
-    "build": "esbuild src/index.js --bundle --format=esm --minify --platform=browser --outfile=src/index.out.js",
+    "build-dev": "esbuild src/index.js --bundle --format=esm --platform=browser --outfile=src/index.out.js && esbuild node_modules/@ffmpeg/ffmpeg/dist/esm/worker.js --bundle --platform=browser --outfile=src/worker.js",
+    "build": "esbuild src/index.js --bundle --format=esm --minify --platform=browser --outfile=src/index.out.js && esbuild node_modules/@ffmpeg/ffmpeg/dist/esm/worker.js --bundle --minify --platform=browser --outfile=src/worker.js",
     "dev": "npm run build-dev && http-server src/ -p 8080 -o"
   },
   "devDependencies": {

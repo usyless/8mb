@@ -3,3 +3,4 @@
 *.out.*
 /src/ffmpeg
 /src/ffmpeg-mt
+/src/worker.js
