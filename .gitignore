@@ -1,5 +1,5 @@
 /.idea
 /node_modules
-*_compiled.*
+*.out.*
 /src/ffmpeg
 /src/ffmpeg-mt
