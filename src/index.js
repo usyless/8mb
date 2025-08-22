@@ -63,7 +63,18 @@ fileInput.addEventListener('change', (e) => {
                 // error
                 continue;
             }
+
+            const video = await ffmpeg.readFile('output.mp4');
+
+            // download video
+            const a = document.createElement('a');
+            const url = URL.createObjectURL(new Blob([video.buffer], { type: 'video/mp4' }));
+            a.href = url;
+            a.download = 'output.mp4';
+            a.click();
+            URL.revokeObjectURL(url);
         }
+        fileInput.disabled = false;
     }).catch((e) => {
         // display error
         fileInput.disabled = false;
