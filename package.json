@@ -15,9 +15,15 @@
   "type": "commonjs",
   "main": "src/index.js",
   "scripts": {
-    "test": "http-server -p 8080 -o"
+    "build": "esbuild src/index.js --bundle --format=esm --minify --platform=browser --outfile=index_compiled.js",
+    "dev": "npm run build && http-server -p 8080 -o"
   },
   "devDependencies": {
+    "esbuild": "^0.25.9",
     "http-server": "^14.1.1"
+  },
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2"
   }
 }
