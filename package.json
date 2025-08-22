@@ -15,6 +15,7 @@
   "type": "commonjs",
   "main": "src/index.js",
   "scripts": {
+    "download": "node download-ffmpeg.js",
     "build": "esbuild src/index.js --bundle --format=esm --minify --platform=browser --outfile=src/index_compiled.js",
     "dev": "npm run build && http-server -p 8080 -o"
   },
