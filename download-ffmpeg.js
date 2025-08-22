@@ -50,3 +50,15 @@ for (const {url, file} of files) {
         });
     });
 }
+
+fs.copyFile(path.join(__dirname, 'node_modules', '@ffmpeg', 'ffmpeg', 'dist', 'umd', 'ffmpeg.js'), path.join(srcDir, 'ffmpeg.js'), 0, (err) => {
+    if (err) {
+        console.error('Failed to copy ffmpeg.js:', err.message);
+    }
+});
+
+fs.copyFile(path.join(__dirname, 'node_modules', '@ffmpeg', 'ffmpeg', 'dist', 'umd', '814.ffmpeg.js'), path.join(srcDir, '814.ffmpeg.js'), 0, (err) => {
+    if (err) {
+        console.error('Failed to copy 814.ffmpeg.js:', err.message);
+    }
+});

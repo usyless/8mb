@@ -1,6 +1,6 @@
 "use strict";
 
-import { FFmpeg } from '@ffmpeg/ffmpeg';
+const { FFmpeg } = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
 
 let onProgress;
 
@@ -28,7 +28,9 @@ const getFFmpeg = (() => {
                     console.log('Using MT mode');
                     loadData.workerURL = baseURL + 'ffmpeg-core.worker.js';
                 }
+                console.log('Loading ffmpeg with data:', loadData);
                 await ffmpeg.load(loadData);
+                console.log('Loaded ffmpeg');
             } catch (error) {
                 console.error(error);
                 throw error;
@@ -46,10 +48,12 @@ fileInput.addEventListener('change', (e) => {
     fileInput.disabled = true;
 
     getFFmpeg().then(async (ffmpeg) => {
+        console.log(ffmpeg);
         for (const file of files) {
             const wroteFile = await ffmpeg.writeFile('input', new Uint8Array(await file.arrayBuffer()));
 
             if (!wroteFile) {
+                console.error('Error writing file');
                 // error
                 continue;
             }
@@ -61,6 +65,7 @@ fileInput.addEventListener('change', (e) => {
             const status = await ffmpeg.exec(['-i', 'input', 'output.mp4']);
 
             if (status !== 0) {
+                console.error('Failed to exec ffmpeg command');
                 // error
                 continue;
             }
