@@ -25,6 +25,7 @@ const getFFmpeg = (() => {
                     wasmURL: baseURL + 'ffmpeg-core.wasm'
                 }
                 if (window.crossOriginIsolated) {
+                    console.log('Using MT mode');
                     loadData.workerURL = baseURL + 'ffmpeg-core.worker.js';
                 }
                 await ffmpeg.load(loadData);
