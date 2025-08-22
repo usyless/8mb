@@ -2,10 +2,14 @@
 
 const { FFmpeg } = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
 
+const toBlobURL = async (url, mimeType) => URL.createObjectURL(
+    new Blob([await (await fetch(url)).arrayBuffer()], { type: mimeType })
+);
+
 let onProgress;
 
 const getFFmpeg = (() => {
-    const baseURL = (window.crossOriginIsolated) ? './ffmpeg-mt/' : './ffmpeg/';
+    const baseURL = (window.crossOriginIsolated) ? 'ffmpeg-mt/' : 'ffmpeg/';
 
     const ffmpeg = new FFmpeg();
 
@@ -21,12 +25,12 @@ const getFFmpeg = (() => {
         if (!ffmpeg.loaded) {
             try {
                 const loadData = {
-                    coreURL: baseURL + 'ffmpeg-core.js',
-                    wasmURL: baseURL + 'ffmpeg-core.wasm'
+                    coreURL: await toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript'),
+                    wasmURL: await toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm')
                 }
                 if (window.crossOriginIsolated) {
                     console.log('Using MT mode');
-                    loadData.workerURL = baseURL + 'ffmpeg-core.worker.js';
+                    loadData.workerURL = await toBlobURL(baseURL + 'ffmpeg-core.worker.js', 'text/javascript');
                 }
                 console.log('Loading ffmpeg with data:', loadData);
                 await ffmpeg.load(loadData);
