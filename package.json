@@ -18,7 +18,7 @@
     "download": "node download-ffmpeg.js",
     "build-dev": "esbuild src/index.js --bundle --format=esm --platform=browser --outfile=src/index.out.js",
     "build": "esbuild src/index.js --bundle --format=esm --minify --platform=browser --outfile=src/index.out.js",
-    "dev": "npm run build-dev && http-server -p 8080 -o"
+    "dev": "npm run build-dev && http-server /src -p 8080 -o"
   },
   "devDependencies": {
     "esbuild": "^0.25.9",
