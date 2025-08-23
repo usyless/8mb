@@ -69,17 +69,20 @@ fileInput.addEventListener('change', (e) => {
 
             const inputFileName = file.name;
 
-            const fileName = (() => {
+            const outputFileName = (() => {
+                let fileName;
+
                 const split = inputFileName.split('.');
                 if (split.length > 1) {
                     split.pop();
-                    return split.join('.');
+                    fileName = split.join('.');
                 } else {
-                    return split[0];
+                    fileName = split[0];
                 }
+                return fileName + '_usyless.uk_8mb.mp4';
             })();
 
-            const outputFileName = fileName + '.mp4';
+            console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
 
             const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer())));
 
