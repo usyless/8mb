@@ -11,8 +11,6 @@ const toBlobURL = async (url, mimeType) => URL.createObjectURL(
 let onProgress;
 
 const getFFmpeg = (() => {
-    const baseURL = (window.crossOriginIsolated) ? 'ffmpeg-mt/' : 'ffmpeg/';
-
     const ffmpeg = new FFmpeg();
 
     ffmpeg.on('log', ({message}) => {
@@ -23,9 +21,10 @@ const getFFmpeg = (() => {
         onProgress?.(progress, time);
     });
 
-    return async () => {
+    return async (forceSingleThreaded) => {
         if (!ffmpeg.loaded) {
             try {
+                const baseURL = (forceSingleThreaded || !window.crossOriginIsolated) ? 'ffmpeg/' : 'ffmpeg-mt/';
                 const loadData = {
                     coreURL: await toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript'),
                     wasmURL: await toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm')
@@ -313,8 +312,34 @@ fileInput.addEventListener('change', async () => {
     }
 });
 
+const settingsTemplate = document.getElementById('settingsTemplate');
+const showSettings = async () => {
+    const set = settingsTemplate.content.cloneNode(true);
+    const currSet = getSettings() ?? {};
+
+    set.querySelector('#forceSingleThreaded').checked = !!currSet.forceSingleThreaded ?? false;
+    set.querySelector('#targetFileSize').value = Number(currSet.targetFileSize) || 0;
+    set.querySelector('#ffmpegPreset').value = currSet.ffmpegPreset || "ultrafast";
+
+    set.serialise = () => {
+        const set = document.getElementById('settingsMenu');
+        const settings = {
+            forceSingleThreaded: set.querySelector('#forceSingleThreaded').checked,
+            targetFileSize: +set.querySelector('#targetFileSize').value,
+            ffmpegPreset: set.querySelector('#ffmpegPreset').value
+        };
+
+        if (settings.targetFileSize <= 0) settings.targetFileSize = 0;
+        return settings;
+    }
+
+    const newSettings = await createPopup(set);
+    localStorage.setItem('settings', JSON.stringify(newSettings));
+}
+document.getElementById('settings').addEventListener('click', showSettings);
+
 const getSettings = () => {
-    return {};
+    return JSON.parse(localStorage.getItem('settings'));
 }
 
 const enableCancel = () => {

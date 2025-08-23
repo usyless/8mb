@@ -51,6 +51,33 @@
     <a href="https://github.com/usyless/8mb" target="_blank">source code</a>
 </div>
 
+<template id="settingsTemplate">
+    <div id="settingsMenu">
+        <div>
+            <label for="forceSingleThreaded">Force single threaded mode (default off): </label>
+            <input type="checkbox" id="forceSingleThreaded">
+        </div>
+        <div>
+            <label for="targetFileSize">Target file size (MB -> Blank for default): </label>
+            <input type="number" id="targetFileSize" min="0">
+        </div>
+        <div>
+            <label for="ffmpegPreset">FFmpeg encoder preset:</label>
+            <select id="ffmpegPreset">
+                <option value="ultrafast">ultrafast (default)</option>
+                <option value="superfast">superfast</option>
+                <option value="veryfast">veryfast</option>
+                <option value="faster">faster</option>
+                <option value="fast">fast</option>
+                <option value="medium">medium (ffmpeg default, very slow here though)</option>
+                <option value="slow">slow</option>
+                <option value="slower">slower</option>
+                <option value="veryslow">veryslow</option>
+            </select>
+        </div>
+    </div>
+</template>
+
 <input type="file" id="file" accept="video/*" class="hidden">
 <script src="./updater.js" type="module"></script>
 <script src="./ffmpeg.js"></script>
