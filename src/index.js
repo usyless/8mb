@@ -50,6 +50,8 @@ const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
 
 const audioBitrate = 128 * 1024; // bits -> 128kib
 
+const qualities = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
+
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
 
@@ -141,7 +143,7 @@ fileInput.addEventListener('change', (e) => {
 
             console.log(`Using video bitrate: ${videoBitrate}kbps and audio bitrate: ${audioBitrate / (1024 * 8)}kbps`);
 
-            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / 1024}k`, outputFileName]));
+            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', qualities[0], '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / 1024}k`, outputFileName]));
 
             console.log('FFMpeg:', ffmpegStatus);
 
