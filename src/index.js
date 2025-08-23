@@ -62,6 +62,7 @@ const auto_audio_bitrates = [128 * 1024, 64 * 1024, 32 * 1024, 16 * 1024]; // bi
 
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
+const ProgressBar = document.getElementById('progress').firstElementChild;
 
 fileInput.addEventListener('change', () => {
     const files = fileInput.files;
@@ -70,9 +71,20 @@ fileInput.addEventListener('change', () => {
     startSpinner();
     setProcessingText();
 
+    const totalVideos = files.length;
+
+    const setProgressBar = (prog, videoIndex) => {
+        ProgressBar.style.width = `${prog}%`;
+        ProgressBar.nextElementSibling.textContent = `${prog}% (Video ${videoIndex}/${totalVideos})`;
+    }
+
+    setProgressBar(0, 1);
+
     getFFmpeg().then(async (ffmpeg) => {
         console.log(ffmpeg);
+        let index = 0;
         for (const file of files) {
+            ++index;
             const inputFileName = file.name;
             onProgress = null;
             if (!file.type.startsWith('video/')) {
@@ -100,7 +112,11 @@ fileInput.addEventListener('change', () => {
 
             console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
 
+            setProgressBar(1, index);
+
             const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer())));
+
+            setProgressBar(2, index);
 
             const deleteInputFile = () => runAsync(ffmpeg.deleteFile(inputFileName));
 
@@ -115,7 +131,12 @@ fileInput.addEventListener('change', () => {
             if (inputFileName === outputFileName) {
                 output_info = 'output_not_today.txt';
             }
+
+            setProgressBar(3, index);
+
             const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info]));
+
+            setProgressBar(5, index);
 
             console.log('FFProbe:', ffprobeStatus);
 
@@ -159,7 +180,10 @@ fileInput.addEventListener('change', () => {
             const videoBitrate = Math.floor((targetFileSize - audioSize) / duration); // bps
 
             onProgress = (progress, time) => {
-                console.log(`progress: ${progress}, time: ${time}`);
+                console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
+                if (progress <= 100 && progress >= 0) {
+                    setProgressBar((5 + (95 * progress)).toFixed(1), index);
+                }
             };
 
             console.log(`Using video bitrate: ${videoBitrate / 1024}kbps and audio bitrate: ${audioBitrate / 1024}kbps for ${inputFileName}`);
@@ -220,6 +244,10 @@ fileInput.addEventListener('change', () => {
         });
     });
 });
+
+const getSettings = () => {
+    return {};
+}
 
 const setProcessingText = () => {
     for (const elem of document.querySelectorAll('[data-processing][data-default]')) {
