@@ -48,9 +48,8 @@ const runAsync = (...args) => Promise.allSettled(args);
 
 const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
 
-const audioBitrate = 128 * 1024; // bits -> 128kib
-
-const qualities = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
+const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
+const auto_audio_bitrates = [128 * 1024, 64 * 1024, 32 * 1024, 16 * 1024]; // bits
 
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
@@ -127,7 +126,14 @@ fileInput.addEventListener('change', (e) => {
                 continue;
             }
 
-            const audioSize = audioBitrate * duration; // bits
+            let audioBitrate;
+            let audioSize; // bits
+
+            for (const audioBR of auto_audio_bitrates) {
+                audioBitrate = audioBR;
+                audioSize = audioBitrate * duration;
+                if (audioSize <= targetFileSize) break;
+            }
 
             if (audioSize >= targetFileSize) {
                 await deleteInputFile();
@@ -143,7 +149,7 @@ fileInput.addEventListener('change', (e) => {
 
             console.log(`Using video bitrate: ${videoBitrate}kbps and audio bitrate: ${audioBitrate / (1024 * 8)}kbps`);
 
-            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', qualities[0], '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / 1024}k`, outputFileName]));
+            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', ffmpeg_presets[0], '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / 1024}k`, outputFileName]));
 
             console.log('FFMpeg:', ffmpegStatus);
 
