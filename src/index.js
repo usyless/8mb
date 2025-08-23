@@ -48,7 +48,7 @@ const runAsync = (...args) => Promise.allSettled(args);
 
 const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
 
-const audioBitrate = 128 * 1024 * 8; // bits -> 128kib
+const audioBitrate = 128 * 1024; // bits -> 128kib
 
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
