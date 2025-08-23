@@ -61,6 +61,8 @@ fileInput.addEventListener('change', () => {
     const files = fileInput.files;
     fileInput.disabled = true;
 
+    startSpinner();
+
     getFFmpeg().then(async (ffmpeg) => {
         console.log(ffmpeg);
         for (const file of files) {
@@ -198,10 +200,12 @@ fileInput.addEventListener('change', () => {
             await deleteOutputFile();
         }
         fileInput.disabled = false;
+        cancelSpinner();
     }).catch((e) => {
         // display error
         console.error('Error loading ffmpeg:', e);
         fileInput.disabled = false;
+        cancelSpinner();
         onProgress = null;
     });
 });
@@ -273,6 +277,7 @@ const spinnerRectDashGap = 10;
 let spinnerRunning = false;
 
 const cancelSpinner = () => {
+    if (fileInput.disabled) return;
     spinnerRunning = false;
     for (const anim of spinnerRect.getAnimations()) anim.pause();
 }
