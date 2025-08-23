@@ -119,6 +119,8 @@ fileInput.addEventListener('change', (e) => {
                 console.log(`progress: ${progress}, time: ${time}`);
             };
 
+            console.log(`Using video bitrate: ${videoBitrate}kbps and audio bitrate: ${audioBitrate / (1024 * 8)}kbps`);
+
             const ffmpegStatus = await ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / (1024 * 8)}k`, outputFileName]);
 
             if (ffmpegStatus !== 0) {
