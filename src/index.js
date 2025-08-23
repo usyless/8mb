@@ -91,7 +91,7 @@ fileInput.addEventListener('change', () => {
         let index = 0;
         for (const file of files) {
             if (currentCancelled) {
-                console.log('Terminating ffmpeg as last cancelled and another video remaind');
+                console.log('Terminating ffmpeg as last cancelled and another video remains');
                 ffmpeg.terminate();
                 await getFFmpeg();
             }
