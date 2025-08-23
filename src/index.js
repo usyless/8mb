@@ -129,11 +129,11 @@ fileInput.addEventListener('change', (e) => {
                 continue;
             }
 
-            let audioBitrate; // kbps
+            let audioBitrate; // bps
             let audioSize; // bits
 
             for (const audioBR of auto_audio_bitrates) {
-                audioBitrate = audioBR / 1024;
+                audioBitrate = audioBR;
                 audioSize = audioBR * duration;
                 if (audioSize < targetFileSize) break;
             }
@@ -144,15 +144,15 @@ fileInput.addEventListener('change', (e) => {
                 continue;
             }
 
-            const videoBitrate = Math.floor((targetFileSize - audioSize) / (duration * 1024)); // kbps
+            const videoBitrate = Math.floor((targetFileSize - audioSize) / duration); // bps
 
             onProgress = (progress, time) => {
                 console.log(`progress: ${progress}, time: ${time}`);
             };
 
-            console.log(`Using video bitrate: ${videoBitrate}kbps and audio bitrate: ${audioBitrate}kbps`);
+            console.log(`Using video bitrate: ${videoBitrate / 1024}kbps and audio bitrate: ${audioBitrate / 1024}kbps`);
 
-            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', ffmpeg_presets[0], '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate}k`, outputFileName]));
+            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', ffmpeg_presets[0], '-b:v', videoBitrate.toString(), '-c:a', 'aac', '-b:a', audioBitrate.toString(), outputFileName]));
 
             console.log('FFMpeg:', ffmpegStatus);
 
