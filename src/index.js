@@ -339,12 +339,14 @@ const setProcessingText = () => {
     for (const elem of document.querySelectorAll('[data-processing][data-default]')) {
         elem.textContent = elem.dataset.processing;
     }
+    resizeSpinner();
 }
 
 const setDefaultText = () => {
     for (const elem of document.querySelectorAll('[data-processing][data-default]')) {
         elem.textContent = elem.dataset.default;
     }
+    resizeSpinner();
 }
 
 const changeEvent = new Event('change');
