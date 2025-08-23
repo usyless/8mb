@@ -62,7 +62,7 @@ fileInput.addEventListener('change', (e) => {
         for (const file of files) {
             onProgress = null;
 
-            if (file.size <= targetFileSize) {
+            if ((file.size * 8) <= targetFileSize) { // convert into bits
                 console.log('File is already under desired size!');
                 continue;
             }
