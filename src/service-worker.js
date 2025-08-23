@@ -8,7 +8,7 @@ contentToCache = [
     './index.html',
     './styles.css',
     './shared.css',
-    './popups.css',
+    './popup.css',
     './index.js',
     './popups.js',
     './ffmpeg.js',
@@ -54,7 +54,13 @@ self.addEventListener('fetch', (e) => {
     if (!(req.url.startsWith('http:') || req.url.startsWith('https:'))) return;
 
     e.respondWith((async () => {
-        return (await caches.match(req, {ignoreSearch: true})) ?? (await fetch(req));
+        const r = (await caches.match(req, {ignoreSearch: true})) ?? (await fetch(req));
+
+        const headers = new Headers(r.headers);
+        headers.set("Cross-Origin-Embedder-Policy", "require-corp");
+        headers.set("Cross-Origin-Opener-Policy", "same-origin");
+
+        return new Response(r.body, { status: r.status, statusText: r.statusText, headers });
     })());
 });
 

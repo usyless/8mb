@@ -1,4 +1,4 @@
-if ("serviceWorker" in navigator && !["localhost", "127.0.0.1"].includes(location.hostname)) {
+if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         window.location.reload();
     });
@@ -20,5 +20,9 @@ if ("serviceWorker" in navigator && !["localhost", "127.0.0.1"].includes(locatio
                 }
             });
         });
+        if (registration.active && !navigator.serviceWorker.controller) {
+            // reload to use MT mode if possible
+            window.location.reload();
+        }
     });
 }
