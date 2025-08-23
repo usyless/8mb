@@ -1,0 +1,40 @@
+{
+    "name": "8mb",
+    "description": "Local video compressing app",
+    "icons": [
+        {
+            "src": "./assets/icon32.png",
+            "sizes": "32x32",
+            "type": "image/png"
+        },
+        {
+            "src": "./assets/icon64.png",
+            "sizes": "64x64",
+            "type": "image/png"
+        },
+        {
+            "src": "./assets/icon128.png",
+            "sizes": "128x128",
+            "type": "image/png"
+        },
+        {
+            "src": "./assets/icon192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "./assets/icon256.png",
+            "sizes": "256x256",
+            "type": "image/png"
+        },
+        {
+            "src": "./assets/icon512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "./",
+    "display": "standalone",
+    "theme_color": "#000000",
+    "background_color": "#000000"
+}
