@@ -64,14 +64,41 @@ body {
     overflow: hidden;
 }
 
-#mainBox {
+#wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
 
-    border: var(--spacing) dashed var(--text-primary);
-    border-radius: var(--radius-larger);
+    width: 100%;
+    height: 100%;
+
+    overflow: hidden;
+}
+
+#wrapper > * {
+    position: absolute;
+}
+
+#bottomContent {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding-bottom: var(--spacing);
+}
+
+.hidden {
+    display: none;
+}
+
+#mainBox {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 
     padding: 30px;
     margin: 15px;

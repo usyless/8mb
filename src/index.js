@@ -201,3 +201,43 @@ fileInput.addEventListener('change', (e) => {
         onProgress = null;
     });
 });
+
+// visuals
+
+const mainBox = document.getElementById('mainBox');
+const spinner = document.getElementById('spinner');
+const spinnerRect = spinner.querySelector('rect');
+const spinnerRectRadius = 20; // px
+const spinnerRectDashCount = 30;
+const spinnerRectDashGap = 10;
+
+const resizeSpinner = () => {
+    const {width, height} = mainBox.getBoundingClientRect();
+    spinner.setAttributeNS(null, 'viewBox', `0 0 ${width} ${height}`);
+    spinner.setAttributeNS(null, 'width', `${width}px`);
+    spinner.setAttributeNS(null, 'height', `${height}px`);
+
+    const rectWidth = width - 10;
+    const rectHeight = height - 10;
+
+    spinnerRect.setAttributeNS(null, 'width', `${rectWidth}px`);
+    spinnerRect.setAttributeNS(null, 'height', `${rectHeight}px`);
+
+    const perimeter = 2 * (rectHeight + rectWidth - 4 * spinnerRectRadius) + 2 * Math.PI * spinnerRectRadius;
+    const dash = (perimeter / spinnerRectDashCount) - spinnerRectDashGap;
+    spinnerRect.style.strokeDasharray = `${dash},${spinnerRectDashGap}`;
+
+    for (const anim of spinnerRect.getAnimations()) anim.cancel();
+
+    spinnerRect.animate([
+        {strokeDashoffset: dash + spinnerRectDashGap},
+        {strokeDashoffset: 0}
+    ], {
+        duration: 2000,
+        iterations: Infinity,
+        easing: 'linear',
+    });
+}
+resizeSpinner();
+
+window.addEventListener('resize', resizeSpinner, {passive: true});
