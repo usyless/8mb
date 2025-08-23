@@ -21,6 +21,7 @@
 :root {
     --primary: #000000;
     --text-primary: #dfdfdf;
+    --text-primary-lower-opacity: #dfdfdfaa;
 
     --radius-smaller: 5px;
     --radius: 10px;
@@ -102,6 +103,7 @@ body {
 
     padding: 30px;
     margin: 15px;
+    pointer-events: none;
 }
 
 p + p {
@@ -110,8 +112,25 @@ p + p {
 
 #spinner {
     transition: transform 0.3s ease-in-out;
+    cursor: pointer;
 }
 
 #spinner:hover, #spinner:active {
     transform: scale(1.05);
+}
+
+#spinner rect {
+    transition: 0.3s ease-in-out;
+}
+
+#spinner:active rect {
+    fill: #33333399;
+}
+
+#spinner + #mainBox * {
+    transition: text-shadow 0.3s ease-in-out;
+}
+
+#spinner:active + #mainBox * {
+    text-shadow: 0 0 5px var(--text-primary-lower-opacity);
 }
