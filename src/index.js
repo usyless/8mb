@@ -58,10 +58,10 @@ fileInput.addEventListener('change', (e) => {
     fileInput.disabled = true;
 
     getFFmpeg().then(async (ffmpeg) => {
-        onProgress = null;
-
         console.log(ffmpeg);
         for (const file of files) {
+            onProgress = null;
+
             if (file.size <= targetFileSize) {
                 console.log('File is already under desired size!');
                 continue;
