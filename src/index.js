@@ -57,7 +57,7 @@ const auto_audio_bitrates = [128 * 1024, 64 * 1024, 32 * 1024, 16 * 1024]; // bi
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
 
-fileInput.addEventListener('change', (e) => {
+fileInput.addEventListener('change', () => {
     const files = fileInput.files;
     fileInput.disabled = true;
 
@@ -65,6 +65,10 @@ fileInput.addEventListener('change', (e) => {
         console.log(ffmpeg);
         for (const file of files) {
             onProgress = null;
+            if (!file.type.startsWith('video/')) {
+                console.log('File is not a video file!');
+                continue;
+            }
 
             if ((file.size * 8) <= targetFileSize) { // convert into bits
                 console.log('File is already under desired size!');
@@ -202,11 +206,65 @@ fileInput.addEventListener('change', (e) => {
     });
 });
 
-// visuals
+const loadFiles = (files) => {
+    const validFiles = Array.from(files).filter((f) => f.type.startsWith('video/'));
+    if (validFiles.length > 0) {
+        const dataTransfer = new DataTransfer();
+        for (const file of validFiles) dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+        fileInput.dispatchEvent(new Event('change'));
+    } else {
+        console.log('No valid files provided');
+    }
+}
+
+// drag and drop + paste
 
 const mainBox = document.getElementById('mainBox');
 const spinner = document.getElementById('spinner');
 const spinnerRect = spinner.querySelector('rect');
+
+document.addEventListener('dragover', (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy';
+    startSpinner();
+});
+document.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    document.body.classList.remove('lowOpacity');
+    cancelSpinner();
+});
+document.addEventListener('dragend', (e) => {
+    e.preventDefault();
+    document.body.classList.remove('lowOpacity');
+    cancelSpinner();
+});
+document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    document.body.classList.remove('lowOpacity');
+    if (fileInput.disabled) return;
+    loadFiles(e.dataTransfer.files);
+});
+document.addEventListener('paste', (e) => {
+    const d = new DataTransfer();
+    for (const item of e.clipboardData.items) {
+        if (item.kind === 'file') d.items.add(item.getAsFile());
+    }
+    if (fileInput.disabled) return;
+    if (d.files.length > 0) {
+        e.preventDefault();
+        loadFiles(d.files);
+    } else {
+        console.log('No files provided in paste');
+    }
+});
+spinner.addEventListener('click', () => {
+    if (fileInput.disabled) return;
+    fileInput.click();
+});
+
+// visuals
+
 const spinnerRectRadius = 20; // px
 const spinnerRectDashCount = 30;
 const spinnerRectDashGap = 10;
