@@ -211,19 +211,19 @@ const spinnerRectRadius = 20; // px
 const spinnerRectDashCount = 30;
 const spinnerRectDashGap = 10;
 
-const resizeSpinner = () => {
-    const {width, height} = mainBox.getBoundingClientRect();
-    spinner.setAttributeNS(null, 'viewBox', `0 0 ${width} ${height}`);
-    spinner.setAttributeNS(null, 'width', `${width}px`);
-    spinner.setAttributeNS(null, 'height', `${height}px`);
+let spinnerRunning = false;
 
-    const rectWidth = width - 10;
-    const rectHeight = height - 10;
+const cancelSpinner = () => {
+    spinnerRunning = false;
+    for (const anim of spinnerRect.getAnimations()) anim.cancel();
+}
 
-    spinnerRect.setAttributeNS(null, 'width', `${rectWidth}px`);
-    spinnerRect.setAttributeNS(null, 'height', `${rectHeight}px`);
+const startSpinner = () => {
+    spinnerRunning = true;
+    const width = +spinnerRect.getAttributeNS(null, 'width').slice(0, -2);
+    const height = +spinnerRect.getAttributeNS(null, 'height').slice(0, -2);
 
-    const perimeter = 2 * (rectHeight + rectWidth - 4 * spinnerRectRadius) + 2 * Math.PI * spinnerRectRadius;
+    const perimeter = 2 * (height + width - 4 * spinnerRectRadius) + 2 * Math.PI * spinnerRectRadius;
     const dash = (perimeter / spinnerRectDashCount) - spinnerRectDashGap;
     spinnerRect.style.strokeDasharray = `${dash},${spinnerRectDashGap}`;
 
@@ -238,6 +238,19 @@ const resizeSpinner = () => {
         easing: 'linear',
     });
 }
+
+const resizeSpinner = () => {
+    const {width, height} = mainBox.getBoundingClientRect();
+    spinner.setAttributeNS(null, 'viewBox', `0 0 ${width} ${height}`);
+    spinner.setAttributeNS(null, 'width', `${width}px`);
+    spinner.setAttributeNS(null, 'height', `${height}px`);
+    spinnerRect.setAttributeNS(null, 'width', `${width - 10}px`);
+    spinnerRect.setAttributeNS(null, 'height', `${height - 10}px`);
+
+    if (spinnerRunning) startSpinner();
+}
 resizeSpinner();
+startSpinner();
+cancelSpinner();
 
 window.addEventListener('resize', resizeSpinner, {passive: true});
