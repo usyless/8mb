@@ -14,7 +14,7 @@ const getFFmpeg = (() => {
     const ffmpeg = new FFmpeg();
 
     ffmpeg.on('log', ({ message }) => {
-        console.log(message);
+        console.info(message);
     });
 
     ffmpeg.on('progress', ({ progress, time }) => {
@@ -54,7 +54,21 @@ fileInput.addEventListener('change', (e) => {
     getFFmpeg().then(async (ffmpeg) => {
         console.log(ffmpeg);
         for (const file of files) {
-            const wroteFile = await ffmpeg.writeFile('input', new Uint8Array(await file.arrayBuffer()));
+            const inputFileName = file.name;
+
+            const fileName = (() => {
+                const split = inputFileName.split('.');
+                if (split.length > 1) {
+                    split.pop();
+                    return split.join('.');
+                } else {
+                    return split[0];
+                }
+            })();
+
+            const outputFileName = fileName + '.mp4';
+
+            const wroteFile = await ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer()));
 
             if (!wroteFile) {
                 console.error('Error writing file');
@@ -66,7 +80,7 @@ fileInput.addEventListener('change', (e) => {
                 console.log(`progress: ${progress}, time: ${time}`);
             };
 
-            const status = await ffmpeg.exec(['-i', 'input', 'output.mp4']);
+            const status = await ffmpeg.exec(['-i', inputFileName, outputFileName]);
 
             if (status !== 0) {
                 console.error('Failed to exec ffmpeg command');
@@ -74,19 +88,20 @@ fileInput.addEventListener('change', (e) => {
                 continue;
             }
 
-            const video = await ffmpeg.readFile('output.mp4');
+            const video = await ffmpeg.readFile(outputFileName);
 
             // download video
             const a = document.createElement('a');
             const url = URL.createObjectURL(new Blob([video.buffer], { type: 'video/mp4' }));
             a.href = url;
-            a.download = 'output.mp4';
+            a.download = outputFileName;
             a.click();
             URL.revokeObjectURL(url);
         }
         fileInput.disabled = false;
     }).catch((e) => {
         // display error
+        console.error(e);
         fileInput.disabled = false;
         onProgress = null;
     });
