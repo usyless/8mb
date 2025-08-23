@@ -141,7 +141,7 @@ fileInput.addEventListener('change', (e) => {
 
             console.log(`Using video bitrate: ${videoBitrate}kbps and audio bitrate: ${audioBitrate / (1024 * 8)}kbps`);
 
-            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / (1024 * 8)}k`, outputFileName]));
+            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / 1024}k`, outputFileName]));
 
             console.log('FFMpeg:', ffmpegStatus);
 
