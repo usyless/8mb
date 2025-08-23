@@ -266,6 +266,4 @@ window.addEventListener('resize', resizeSpinner, {passive: true});
 
 spinner.addEventListener('pointerenter', startSpinner);
 spinner.addEventListener('pointerleave', cancelSpinner);
-spinner.addEventListener('touchstart', () => {
-
-});
+spinner.addEventListener('touchend', cancelSpinner);
