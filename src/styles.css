@@ -120,7 +120,7 @@ p + p {
 }
 
 #spinner rect {
-    transition: 0.3s ease-in-out;
+    transition: fill 0.3s ease-in-out;
 }
 
 #spinner:active rect {
