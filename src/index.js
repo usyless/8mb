@@ -44,6 +44,10 @@ const getFFmpeg = (() => {
     }
 })();
 
+const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
+
+const audioBitrate = 128 * 1024; // bits -> 128kib
+
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
 
@@ -52,8 +56,15 @@ fileInput.addEventListener('change', (e) => {
     fileInput.disabled = true;
 
     getFFmpeg().then(async (ffmpeg) => {
+        onProgress = null;
+
         console.log(ffmpeg);
         for (const file of files) {
+            if (file.size <= targetFileSize) {
+                console.log('File is already under desired size!');
+                continue;
+            }
+
             const inputFileName = file.name;
 
             const fileName = (() => {
@@ -76,13 +87,32 @@ fileInput.addEventListener('change', (e) => {
                 continue;
             }
 
+            // get video duration
+            let output_info = 'output.txt';
+            if (inputFileName === outputFileName) {
+                output_info = 'output_not_today.txt';
+            }
+            const ffprobeStatus = await ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info]);
+
+            if (ffprobeStatus !== 0) {
+                console.error('Failed to get duration of video!');
+                continue;
+            }
+
+            const duration = Number(await ffmpeg.readFile(output_info, "utf8"));
+
+            if (Number.isNaN(duration) || duration <= 0) {
+                console.error('Failed to get duration of video!');
+                continue;
+            }
+
             onProgress = (progress, time) => {
                 console.log(`progress: ${progress}, time: ${time}`);
             };
 
-            const status = await ffmpeg.exec(['-i', inputFileName, outputFileName]);
+            const ffmpegStatus = await ffmpeg.exec(['-i', inputFileName, outputFileName]);
 
-            if (status !== 0) {
+            if (ffmpegStatus !== 0) {
                 console.error('Failed to exec ffmpeg command');
                 // error
                 continue;
