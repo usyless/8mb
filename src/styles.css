@@ -107,3 +107,11 @@ body {
 p + p {
     margin-top: 0;
 }
+
+#spinner {
+    transition: transform 0.3s ease-in-out;
+}
+
+#spinner:hover, #spinner:active {
+    transform: scale(1.05);
+}

@@ -215,29 +215,38 @@ let spinnerRunning = false;
 
 const cancelSpinner = () => {
     spinnerRunning = false;
-    for (const anim of spinnerRect.getAnimations()) anim.cancel();
+    for (const anim of spinnerRect.getAnimations()) anim.pause();
 }
 
-const startSpinner = () => {
-    spinnerRunning = true;
-    const width = +spinnerRect.getAttributeNS(null, 'width').slice(0, -2);
-    const height = +spinnerRect.getAttributeNS(null, 'height').slice(0, -2);
+const startSpinner = (() => {
+    let lastPerimeter = 0;
 
-    const perimeter = 2 * (height + width - 4 * spinnerRectRadius) + 2 * Math.PI * spinnerRectRadius;
-    const dash = (perimeter / spinnerRectDashCount) - spinnerRectDashGap;
-    spinnerRect.style.strokeDasharray = `${dash},${spinnerRectDashGap}`;
+    return () => {
+        spinnerRunning = true;
+        const width = +spinnerRect.getAttributeNS(null, 'width').slice(0, -2);
+        const height = +spinnerRect.getAttributeNS(null, 'height').slice(0, -2);
 
-    for (const anim of spinnerRect.getAnimations()) anim.cancel();
+        const perimeter = 2 * (height + width - 4 * spinnerRectRadius) + 2 * Math.PI * spinnerRectRadius;
+        if (perimeter === lastPerimeter) {
+            for (const anim of spinnerRect.getAnimations()) anim.play();
+        } else {
+            lastPerimeter = perimeter;
+            const dash = (perimeter / spinnerRectDashCount) - spinnerRectDashGap;
+            spinnerRect.style.strokeDasharray = `${dash},${spinnerRectDashGap}`;
 
-    spinnerRect.animate([
-        {strokeDashoffset: dash + spinnerRectDashGap},
-        {strokeDashoffset: 0}
-    ], {
-        duration: 2000,
-        iterations: Infinity,
-        easing: 'linear',
-    });
-}
+            for (const anim of spinnerRect.getAnimations()) anim.cancel();
+
+            spinnerRect.animate([
+                {strokeDashoffset: dash + spinnerRectDashGap},
+                {strokeDashoffset: 0}
+            ], {
+                duration: 2000,
+                iterations: Infinity,
+                easing: 'linear',
+            });
+        }
+    }
+})();
 
 const resizeSpinner = () => {
     const {width, height} = mainBox.getBoundingClientRect();
@@ -254,3 +263,9 @@ startSpinner();
 cancelSpinner();
 
 window.addEventListener('resize', resizeSpinner, {passive: true});
+
+spinner.addEventListener('pointerenter', startSpinner);
+spinner.addEventListener('pointerleave', cancelSpinner);
+spinner.addEventListener('touchstart', () => {
+
+});
