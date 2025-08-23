@@ -222,7 +222,8 @@ fileInput.addEventListener('change', () => {
                 continue;
             }
 
-            const videoBitrate = Math.floor((targetFileSize - audioSize) / duration); // bps
+            const targetFileSizeAdjusted = targetFileSize * 0.9;
+            const videoBitrate = Math.floor((targetFileSizeAdjusted - audioSize) / duration); // bps
 
             onProgress = (progress, time) => {
                 console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
