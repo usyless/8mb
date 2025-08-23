@@ -101,7 +101,9 @@ fileInput.addEventListener('change', (e) => {
             }
             const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info]));
 
-            if ((ffprobeStatus.status !== "fulfilled") || (ffprobeStatus.value !== 0)) {
+            console.log('FFProbe:', ffprobeStatus);
+
+            if ((ffprobeStatus.status !== "fulfilled") || ((ffprobeStatus.value !== 0) && (ffprobeStatus.value !== -1))) { // it seems to give -1 even on success
                 await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
                 console.error('Failed to get duration of video with error:', ffprobeStatus.reason);
                 continue;
@@ -141,6 +143,8 @@ fileInput.addEventListener('change', (e) => {
 
             const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / (1024 * 8)}k`, outputFileName]));
 
+            console.log('FFMpeg:', ffmpegStatus);
+
             await deleteInputFile(); // dont need it anymore after here
 
             const deleteOutputFile = () => runAsync(ffmpeg.deleteFile(outputFileName));
@@ -172,7 +176,7 @@ fileInput.addEventListener('change', (e) => {
         fileInput.disabled = false;
     }).catch((e) => {
         // display error
-        console.error(e);
+        console.error('Error loading ffmpeg:', e);
         fileInput.disabled = false;
         onProgress = null;
     });
