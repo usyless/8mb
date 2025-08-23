@@ -16,11 +16,6 @@ const getFFmpeg = (() => {
     const ffmpeg = new FFmpeg();
 
     ffmpeg.on('log', ({message}) => {
-        if (message?.startsWith('worker sent an error!')) {
-            createPopup('Fatal error occurred, site will refresh!').then(() => {
-                window.location.reload();
-            });
-        }
         console.info(message);
     });
 
@@ -67,7 +62,7 @@ const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000]; // bi
 const fileInput = document.getElementById('file');
 const ProgressBar = document.getElementById('progress').firstElementChild;
 
-fileInput.addEventListener('change', () => {
+fileInput.addEventListener('change', async () => {
     const files = fileInput.files;
     fileInput.disabled = true;
 
@@ -86,232 +81,232 @@ fileInput.addEventListener('change', () => {
 
     setProgressBar(0, 1);
 
-    getFFmpeg().then(async (ffmpeg) => {
-        console.log(ffmpeg);
-        let index = 0;
-        for (const file of files) {
-            if (currentCancelled) {
-                console.log('Terminating ffmpeg as last cancelled and another video remains');
-                ffmpeg.terminate();
-                await getFFmpeg();
-            }
-            currentCancelled = false;
-            ++index;
-            const inputFileName = file.name;
+    let ffmpeg;
+
+    let index = 0;
+    for (const file of files) {
+        // always terminate ffmpeg
+        ffmpeg?.terminate();
+
+        try {
+            ffmpeg = await getFFmpeg();
+        } catch (e) {
+            console.error('Error loading ffmpeg:', e);
+            fileInput.disabled = false;
+            cancelSpinner();
+            setDefaultText();
+            disableCancel();
             onProgress = null;
-            if (!file.type.startsWith('video/')) {
-                console.log(`File ${inputFileName} is not a video file!`);
-                await createPopup(`File ${inputFileName} is not a video file!`);
-                continue;
-            }
-
-            if ((file.size * 8) <= targetFileSize) { // convert into bits
-                console.log(`File ${inputFileName} is already under desired size!`);
-                await createPopup(`File ${inputFileName} is already under desired size!`);
-                continue;
-            }
-
-            const outputFileName = (() => {
-                let fileName;
-
-                const split = inputFileName.split('.');
-                if (split.length > 1) {
-                    split.pop();
-                    fileName = split.join('.');
-                } else {
-                    fileName = split[0];
-                }
-                return fileName + '_usyless.uk_8mb.mp4';
-            })();
-
-            console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
-
-            setProgressBar(1, index);
-
-            enableCancel();
-
-            const abort = new AbortController();
-
-            cancelCurrent = () => {
-                console.log(`Cancelling ${inputFileName}`);
-                currentCancelled = true;
-                abort.abort();
-            }
-
-            cancelAll = () => {
-                console.log(`Cancelling all of ${files}`);
-                allCancelled = true;
-                abort.abort();
-            }
-
-            const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer()), {signal: abort.signal}));
-
-            if (allCancelled) break;
-            else if (currentCancelled) continue;
-
-            setProgressBar(2, index);
-
-            const deleteInputFile = () => runAsync(ffmpeg.deleteFile(inputFileName));
-
-            if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
-                await deleteInputFile();
-                console.error(`Error writing file ${inputFileName}:`, wroteFile.reason);
-                await createPopup(`Error writing file ${inputFileName}: ${wroteFile.reason}`);
-                continue;
-            }
-
-            // get video duration
-            let output_info = 'output.txt';
-            if (inputFileName === outputFileName) {
-                output_info = 'output_not_today.txt';
-            }
-
-            setProgressBar(3, index);
-
-            const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info], -1, {signal: abort.signal}));
-
-            console.log('FFProbe:', ffprobeStatus);
-
-            if (allCancelled) break;
-            else if (currentCancelled) continue;
-
-            setProgressBar(5, index);
-
-            if ((ffprobeStatus.status !== "fulfilled") || ((ffprobeStatus.value !== 0) && (ffprobeStatus.value !== -1))) { // it seems to give -1 even on success
-                await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
-                console.error(`Failed to get duration of video ${inputFileName} with error:`, ffprobeStatus.reason);
-                await createPopup(`Failed to get duration of video ${inputFileName} with error: ${ffprobeStatus.reason}`);
-                continue;
-            }
-
-            const [durationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8", {signal: abort.signal}));
-
-            if (allCancelled) break;
-            else if (currentCancelled) continue;
-
-            if ((durationResult.status !== "fulfilled")) {
-                await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
-                console.error('Failed to read video duration file with error:', durationResult.reason);
-                await createPopup(`Failed to read video duration file with error: ${durationResult.reason}`);
-                continue;
-            }
-
-            const duration = Number(durationResult.value);
-            await runAsync(ffmpeg.deleteFile(output_info)); // we dont care about the outcome here
-
-            if (Number.isNaN(duration) || duration <= 0) {
-                await deleteInputFile();
-                console.error(`Failed to get duration of video ${inputFileName}!`);
-                await createPopup(`Failed to get duration of video ${inputFileName}!`);
-                continue;
-            }
-
-            let audioBitrate; // bps
-            let audioSize; // bits
-
-            for (const audioBR of auto_audio_bitrates) {
-                audioBitrate = audioBR;
-                audioSize = audioBR * duration;
-                if (audioSize < targetFileSize) break;
-            }
-
-            if (audioSize >= targetFileSize) {
-                await deleteInputFile();
-                console.error(`Audio of video ${inputFileName} will be larger than allowed size!`);
-                await createPopup(`Audio of video ${inputFileName} will be larger than allowed size!`);
-                continue;
-            }
-
-            const targetFileSizeAdjusted = targetFileSize * 0.9;
-            const videoBitrate = Math.floor((targetFileSizeAdjusted - audioSize) / duration); // bps
-
-            onProgress = (progress, time) => {
-                console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
-                if (progress <= 100 && progress >= 0) {
-                    setProgressBar((5 + (95 * progress)).toFixed(1), index);
-                }
-            };
-
-            console.log(`Using video bitrate: ${videoBitrate / 1000}kbps and audio bitrate: ${audioBitrate / 1000}kbps for ${inputFileName}`);
-
-            const [ffmpegStatus] = await runAsync(ffmpeg.exec([
-                '-i', inputFileName,
-                '-c:v', 'libx264',
-                '-preset', ffmpeg_presets[0],
-                '-b:v', videoBitrate.toString(),
-                '-maxrate', videoBitrate.toString(),
-                '-c:a', 'aac',
-                '-b:a', audioBitrate.toString(),
-                outputFileName
-            ], -1, {signal: abort.signal}));
-
-            console.log('FFMpeg:', ffmpegStatus);
-
-            if (allCancelled) break;
-            else if (currentCancelled) continue;
-
-            await deleteInputFile(); // dont need it anymore after here
-
-            const deleteOutputFile = () => runAsync(ffmpeg.deleteFile(outputFileName));
-
-            if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
-                await deleteOutputFile();
-                console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
-                await createPopup(`Failed to exec ffmpeg command for video ${inputFileName} with error: ${ffmpegStatus.reason}`);
-                continue;
-            }
-
-            const [videoStatus] = await runAsync(ffmpeg.readFile(outputFileName, "binary", {signal: abort.signal}));
-
-            if (allCancelled) break;
-            else if (currentCancelled) continue;
-
-            if (videoStatus.status !== "fulfilled") {
-                await deleteOutputFile();
-                console.error(`Failed to read output video file for ${inputFileName} with error:`, videoStatus.reason);
-                await createPopup(`Failed to read output video file for ${inputFileName} with error: ${videoStatus.reason}`);
-                continue;
-            }
-
-            // download video
-            const a = document.createElement('a');
-            const url = URL.createObjectURL(new Blob([videoStatus.value.buffer], {type: 'video/mp4'}));
-            a.href = url;
-            a.download = outputFileName;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            await deleteOutputFile();
-
-            setProgressBar(100, index);
+            void createPopup('Failed to load FFmpeg: The page will now refresh\nCheck the console for more logs').then(() => {
+                window.location.reload();
+            });
         }
-
-        setProgressBar(100, files.length);
-        fileInput.disabled = false;
-        cancelSpinner();
-        setDefaultText();
-        disableCancel();
-
-        if (allCancelled) {
-            console.log('Terminating as all cancelled');
-            ffmpeg.terminate();
-        } else if (currentCancelled) {
-            console.log('Terminating as one cancelled and end reached');
-            ffmpeg.terminate();
-        }
-
-    }).catch((e) => {
-        // display error
-        console.error('Error loading ffmpeg:', e);
-        fileInput.disabled = false;
-        cancelSpinner();
-        setDefaultText();
-        disableCancel();
+        currentCancelled = false;
+        ++index;
+        const inputFileName = file.name;
         onProgress = null;
-        void createPopup('Failed to load FFmpeg: The page will now refresh\nCheck the console for more logs').then(() => {
-            window.location.reload();
-        });
-    });
+        if (!file.type.startsWith('video/')) {
+            console.log(`File ${inputFileName} is not a video file!`);
+            await createPopup(`File ${inputFileName} is not a video file!`);
+            continue;
+        }
+
+        if ((file.size * 8) <= targetFileSize) { // convert into bits
+            console.log(`File ${inputFileName} is already under desired size!`);
+            await createPopup(`File ${inputFileName} is already under desired size!`);
+            continue;
+        }
+
+        const outputFileName = (() => {
+            let fileName;
+
+            const split = inputFileName.split('.');
+            if (split.length > 1) {
+                split.pop();
+                fileName = split.join('.');
+            } else {
+                fileName = split[0];
+            }
+            return fileName + '_usyless.uk_8mb.mp4';
+        })();
+
+        console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
+
+        setProgressBar(1, index);
+
+        enableCancel();
+
+        const abort = new AbortController();
+
+        cancelCurrent = () => {
+            console.log(`Cancelling ${inputFileName}`);
+            currentCancelled = true;
+            abort.abort();
+        }
+
+        cancelAll = () => {
+            console.log(`Cancelling all of ${files}`);
+            allCancelled = true;
+            abort.abort();
+        }
+
+        const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer()), {signal: abort.signal}));
+
+        if (allCancelled) break;
+        else if (currentCancelled) continue;
+
+        setProgressBar(2, index);
+
+        const deleteInputFile = () => runAsync(ffmpeg.deleteFile(inputFileName));
+
+        if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
+            await deleteInputFile();
+            console.error(`Error writing file ${inputFileName}:`, wroteFile.reason);
+            await createPopup(`Error writing file ${inputFileName}: ${wroteFile.reason}`);
+            continue;
+        }
+
+        // get video duration
+        let output_info = 'output.txt';
+        if (inputFileName === outputFileName) {
+            output_info = 'output_not_today.txt';
+        }
+
+        setProgressBar(3, index);
+
+        const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info], -1, {signal: abort.signal}));
+
+        console.log('FFProbe:', ffprobeStatus);
+
+        if (allCancelled) break;
+        else if (currentCancelled) continue;
+
+        setProgressBar(5, index);
+
+        if ((ffprobeStatus.status !== "fulfilled") || ((ffprobeStatus.value !== 0) && (ffprobeStatus.value !== -1))) { // it seems to give -1 even on success
+            await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
+            console.error(`Failed to get duration of video ${inputFileName} with error:`, ffprobeStatus.reason);
+            await createPopup(`Failed to get duration of video ${inputFileName} with error: ${ffprobeStatus.reason}`);
+            continue;
+        }
+
+        const [durationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8", {signal: abort.signal}));
+
+        if (allCancelled) break;
+        else if (currentCancelled) continue;
+
+        if ((durationResult.status !== "fulfilled")) {
+            await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
+            console.error('Failed to read video duration file with error:', durationResult.reason);
+            await createPopup(`Failed to read video duration file with error: ${durationResult.reason}`);
+            continue;
+        }
+
+        const duration = Number(durationResult.value);
+        await runAsync(ffmpeg.deleteFile(output_info)); // we dont care about the outcome here
+
+        if (Number.isNaN(duration) || duration <= 0) {
+            await deleteInputFile();
+            console.error(`Failed to get duration of video ${inputFileName}!`);
+            await createPopup(`Failed to get duration of video ${inputFileName}!`);
+            continue;
+        }
+
+        let audioBitrate; // bps
+        let audioSize; // bits
+
+        for (const audioBR of auto_audio_bitrates) {
+            audioBitrate = audioBR;
+            audioSize = audioBR * duration;
+            if (audioSize < targetFileSize) break;
+        }
+
+        if (audioSize >= targetFileSize) {
+            await deleteInputFile();
+            console.error(`Audio of video ${inputFileName} will be larger than allowed size!`);
+            await createPopup(`Audio of video ${inputFileName} will be larger than allowed size!`);
+            continue;
+        }
+
+        const targetFileSizeAdjusted = targetFileSize * 0.9;
+        const videoBitrate = Math.floor((targetFileSizeAdjusted - audioSize) / duration); // bps
+
+        onProgress = (progress, time) => {
+            console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
+            if (progress <= 100 && progress >= 0) {
+                setProgressBar((5 + (95 * progress)).toFixed(1), index);
+            }
+        };
+
+        console.log(`Using video bitrate: ${videoBitrate / 1000}kbps and audio bitrate: ${audioBitrate / 1000}kbps for ${inputFileName}`);
+
+        const [ffmpegStatus] = await runAsync(ffmpeg.exec([
+            '-i', inputFileName,
+            '-c:v', 'libx264',
+            '-preset', ffmpeg_presets[0],
+            '-b:v', videoBitrate.toString(),
+            '-maxrate', videoBitrate.toString(),
+            '-c:a', 'aac',
+            '-b:a', audioBitrate.toString(),
+            outputFileName
+        ], -1, {signal: abort.signal}));
+
+        console.log('FFMpeg:', ffmpegStatus);
+
+        if (allCancelled) break;
+        else if (currentCancelled) continue;
+
+        await deleteInputFile(); // dont need it anymore after here
+
+        const deleteOutputFile = () => runAsync(ffmpeg.deleteFile(outputFileName));
+
+        if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
+            await deleteOutputFile();
+            console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
+            await createPopup(`Failed to exec ffmpeg command for video ${inputFileName} with error: ${ffmpegStatus.reason}`);
+            continue;
+        }
+
+        const [videoStatus] = await runAsync(ffmpeg.readFile(outputFileName, "binary", {signal: abort.signal}));
+
+        if (allCancelled) break;
+        else if (currentCancelled) continue;
+
+        if (videoStatus.status !== "fulfilled") {
+            await deleteOutputFile();
+            console.error(`Failed to read output video file for ${inputFileName} with error:`, videoStatus.reason);
+            await createPopup(`Failed to read output video file for ${inputFileName} with error: ${videoStatus.reason}`);
+            continue;
+        }
+
+        // download video
+        const a = document.createElement('a');
+        const url = URL.createObjectURL(new Blob([videoStatus.value.buffer], {type: 'video/mp4'}));
+        a.href = url;
+        a.download = outputFileName;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        await deleteOutputFile();
+
+        setProgressBar(100, index);
+    }
+
+    setProgressBar(100, files.length);
+    fileInput.disabled = false;
+    cancelSpinner();
+    setDefaultText();
+    disableCancel();
+
+    ffmpeg.terminate();
+
+    if (allCancelled) {
+        console.log('Terminating as all cancelled');
+        ffmpeg.terminate();
+    } else if (currentCancelled) {
+        console.log('Terminating as one cancelled and end reached');
+        ffmpeg.terminate();
+    }
 });
 
 const getSettings = () => {
