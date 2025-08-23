@@ -126,7 +126,19 @@ p + p {
     text-shadow: 0 0 5px var(--text-primary-lower-opacity);
 }
 
-#settings {
+#footer {
+    margin: 15px;
+    border: var(--text-primary) solid var(--spacing-smaller);
+    border-radius: calc(var(--radius-larger) + 8px);
+
+    display: flex;
+    padding: var(--spacing-larger);
+    gap: var(--spacing-larger);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#footer > * {
     background: transparent;
     display: flex;
     flex-direction: column;
@@ -137,23 +149,30 @@ p + p {
     border-radius: var(--radius-larger);
 
     padding: 15px 20px;
-    margin: 10px 15px 15px;
     cursor: pointer;
     pointer-events: all;
 
     transition: background-color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
 }
 
-#settings > h3 {
+#footer h3 {
     margin: 0;
 }
 
-#settings:hover {
+#footer > *:hover:not(:disabled) {
     background-color: #33333399;
     text-shadow: 0 0 5px var(--text-primary-lower-opacity);
 }
 
-#settings:active {
+#footer > *:active:not(:disabled) {
     background-color: #333333ee;
     text-shadow: 0 0 2px var(--text-primary-lower-opacity);
+}
+
+#footer > *:disabled {
+    cursor: not-allowed;
+}
+
+#footer > *:disabled h3 {
+    color: var(--text-primary-lower-opacity) ;
 }
