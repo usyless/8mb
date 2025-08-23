@@ -1,0 +1,87 @@
+:root {
+    --primary: #000000;
+    --primary-lighter: #121212;
+    --secondary: #1d1e20;
+    --tertiary: #2f3135;
+    --quaternary: #3d3e44;
+    --text-primary: #dfdfdf;
+    --text-primary-lower-opacity: #dfdfdfaa;
+    --disabled: #4d4d4d;
+
+    --radius-smaller: 5px;
+    --radius: 10px;
+    --radius-larger: 15px;
+
+    --spacing: 5px;
+    --spacing-smaller: 3px;
+    --spacing-larger: 8px;
+    --spacing-largest: 12px;
+
+    --border-width: 3px;
+}
+
+button.altButton {
+    background-color: var(--quaternary);
+    border-radius: 0;
+    padding: var(--spacing-smaller) var(--spacing-larger);
+}
+@media (hover: hover) {
+    button.altButton:hover {
+        background-color: var(--disabled);
+    }
+}
+
+button.altButton:active {
+    background-color: var(--quaternary);
+}
+
+.standardButton {
+    outline: none;
+    border: none;
+    border-radius: var(--radius);
+    background-color: var(--secondary);
+    cursor: pointer;
+    transition: 0.1s;
+    padding: var(--spacing-larger);
+}
+
+@media (hover: hover) {
+    .standardButton:hover {
+        background-color: var(--tertiary);
+    }
+}
+
+.standardButton:active {
+    background: var(--quaternary);
+}
+
+.standardButton:disabled {
+    cursor: not-allowed;
+    color: var(--disabled);
+}
+
+@media (hover: hover) {
+    .standardButton:disabled:hover {
+        background-color: var(--primary);
+    }
+}
+
+.hidden, .hidden * {
+    display: none;
+}
+
+.removePointerEvents, .removePointerEvents * {
+    pointer-events: none;
+}
+
+.crosshair_hover {
+    cursor: crosshair;
+}
+
+.not_allowed, .not_allowed * {
+    cursor: not-allowed;
+}
+
+.lowOpacity {
+    opacity: 0.2;
+}

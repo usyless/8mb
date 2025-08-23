@@ -1,0 +1,65 @@
+@import 'shared.css';
+
+.fullscreen {
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.blur {
+    backdrop-filter: blur(10px) brightness(0.7);
+}
+
+.popupOuter {
+    background: var(--primary-lighter);
+    border-radius: var(--radius-larger);
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    max-width: 80%;
+    max-height: 80%;
+    box-shadow: 0 0 10px 3px rgba(0, 0, 0, 0.3);
+}
+
+.popupInner {
+    padding: var(--spacing-largest);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    row-gap: var(--spacing-largest);
+    max-height: 100%;
+    max-width: 100%;
+}
+
+.popupText {
+    padding: var(--spacing-largest);
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    flex: 1;
+}
+
+.popupText * {
+    margin: 0;
+}
+
+.popupButtons {
+    display: flex;
+    column-gap: var(--spacing-smaller);
+}
+
+.popupButtons button {
+    flex: 1;
+    flex-basis: 100%;
+}
+
+.fixedSize {
+    width: 40em;
+    height: 60em;
+}

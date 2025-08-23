@@ -1,5 +1,7 @@
 "use strict";
 
+import { createPopup } from "./popups.js";
+
 const {FFmpeg} = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
 
 const toBlobURL = async (url, mimeType) => URL.createObjectURL(
@@ -15,8 +17,9 @@ const getFFmpeg = (() => {
 
     ffmpeg.on('log', ({message}) => {
         if (message?.startsWith('worker sent an error!')) {
-            alert('Fatal error occurred, site will refresh!');
-            window.location.reload();
+            createPopup('Fatal error occurred, site will refresh!').then(() => {
+                window.location.reload();
+            });
         }
         console.info(message);
     });
@@ -252,17 +255,14 @@ document.addEventListener('dragover', (e) => {
 });
 document.addEventListener('dragleave', (e) => {
     e.preventDefault();
-    document.body.classList.remove('lowOpacity');
     cancelSpinner();
 });
 document.addEventListener('dragend', (e) => {
     e.preventDefault();
-    document.body.classList.remove('lowOpacity');
     cancelSpinner();
 });
 document.addEventListener('drop', (e) => {
     e.preventDefault();
-    document.body.classList.remove('lowOpacity');
     if (fileInput.disabled) return;
     loadFiles(e.dataTransfer.files);
 });
