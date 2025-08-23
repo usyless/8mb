@@ -62,6 +62,7 @@ fileInput.addEventListener('change', () => {
     fileInput.disabled = true;
 
     startSpinner();
+    setProcessingText();
 
     getFFmpeg().then(async (ffmpeg) => {
         console.log(ffmpeg);
@@ -201,14 +202,28 @@ fileInput.addEventListener('change', () => {
         }
         fileInput.disabled = false;
         cancelSpinner();
+        setDefaultText();
     }).catch((e) => {
         // display error
         console.error('Error loading ffmpeg:', e);
         fileInput.disabled = false;
         cancelSpinner();
+        setDefaultText();
         onProgress = null;
     });
 });
+
+const setProcessingText = () => {
+    for (const elem of document.querySelectorAll('[data-processing][data-default]')) {
+        elem.textContent = elem.dataset.processing;
+    }
+}
+
+const setDefaultText = () => {
+    for (const elem of document.querySelectorAll('[data-processing][data-default]')) {
+        elem.textContent = elem.dataset.default;
+    }
+}
 
 const changeEvent = new Event('change');
 const loadFiles = (files) => {
