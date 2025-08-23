@@ -231,6 +231,7 @@ fileInput.addEventListener('change', () => {
 
             setProgressBar(100, index);
         }
+        setProgressBar(100, index);
         fileInput.disabled = false;
         cancelSpinner();
         setDefaultText();
