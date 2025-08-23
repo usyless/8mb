@@ -56,7 +56,7 @@ const runAsync = (...args) => Promise.allSettled(args);
 const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
 
 const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
-const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000]; // bits
+const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000, 8 * 1000]; // bits
 
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
