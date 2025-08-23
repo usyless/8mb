@@ -1,6 +1,6 @@
 "use strict";
 
-import { createPopup } from "./popups.js";
+import {createPopup} from "./popups.js";
 
 const {FFmpeg} = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
 
@@ -53,6 +53,9 @@ const getFFmpeg = (() => {
     }
 })();
 
+let cancelCurrent;
+let cancelAll;
+
 const runAsync = (...args) => Promise.allSettled(args);
 
 const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
@@ -67,6 +70,9 @@ const ProgressBar = document.getElementById('progress').firstElementChild;
 fileInput.addEventListener('change', () => {
     const files = fileInput.files;
     fileInput.disabled = true;
+
+    let currentCancelled = false;
+    let allCancelled = false;
 
     startSpinner();
     setProcessingText();
@@ -84,6 +90,12 @@ fileInput.addEventListener('change', () => {
         console.log(ffmpeg);
         let index = 0;
         for (const file of files) {
+            if (currentCancelled) {
+                console.log('Terminating ffmpeg as last cancelled and another video remaind');
+                ffmpeg.terminate();
+                await getFFmpeg();
+            }
+            currentCancelled = false;
             ++index;
             const inputFileName = file.name;
             onProgress = null;
@@ -116,7 +128,26 @@ fileInput.addEventListener('change', () => {
 
             setProgressBar(1, index);
 
-            const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer())));
+            enableCancel();
+
+            const abort = new AbortController();
+
+            cancelCurrent = () => {
+                console.log(`Cancelling ${inputFileName}`);
+                currentCancelled = true;
+                abort.abort();
+            }
+
+            cancelAll = () => {
+                console.log(`Cancelling all of ${files}`);
+                allCancelled = true;
+                abort.abort();
+            }
+
+            const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer()), {signal: abort.signal}));
+
+            if (allCancelled) break;
+            else if (currentCancelled) continue;
 
             setProgressBar(2, index);
 
@@ -137,11 +168,14 @@ fileInput.addEventListener('change', () => {
 
             setProgressBar(3, index);
 
-            const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info]));
-
-            setProgressBar(5, index);
+            const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info], -1, {signal: abort.signal}));
 
             console.log('FFProbe:', ffprobeStatus);
+
+            if (allCancelled) break;
+            else if (currentCancelled) continue;
+
+            setProgressBar(5, index);
 
             if ((ffprobeStatus.status !== "fulfilled") || ((ffprobeStatus.value !== 0) && (ffprobeStatus.value !== -1))) { // it seems to give -1 even on success
                 await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
@@ -150,7 +184,10 @@ fileInput.addEventListener('change', () => {
                 continue;
             }
 
-            const [durationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8"));
+            const [durationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8", {signal: abort.signal}));
+
+            if (allCancelled) break;
+            else if (currentCancelled) continue;
 
             if ((durationResult.status !== "fulfilled")) {
                 await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
@@ -205,9 +242,12 @@ fileInput.addEventListener('change', () => {
                 '-c:a', 'aac',
                 '-b:a', audioBitrate.toString(),
                 outputFileName
-            ]));
+            ], -1, {signal: abort.signal}));
 
             console.log('FFMpeg:', ffmpegStatus);
+
+            if (allCancelled) break;
+            else if (currentCancelled) continue;
 
             await deleteInputFile(); // dont need it anymore after here
 
@@ -220,7 +260,10 @@ fileInput.addEventListener('change', () => {
                 continue;
             }
 
-            const [videoStatus] = await runAsync(ffmpeg.readFile(outputFileName));
+            const [videoStatus] = await runAsync(ffmpeg.readFile(outputFileName, "binary", {signal: abort.signal}));
+
+            if (allCancelled) break;
+            else if (currentCancelled) continue;
 
             if (videoStatus.status !== "fulfilled") {
                 await deleteOutputFile();
@@ -241,16 +284,28 @@ fileInput.addEventListener('change', () => {
 
             setProgressBar(100, index);
         }
-        setProgressBar(100, index);
+
+        setProgressBar(100, files.length);
         fileInput.disabled = false;
         cancelSpinner();
         setDefaultText();
+        disableCancel();
+
+        if (allCancelled) {
+            console.log('Terminating as all cancelled');
+            ffmpeg.terminate();
+        } else if (currentCancelled) {
+            console.log('Terminating as one cancelled and end reached');
+            ffmpeg.terminate();
+        }
+
     }).catch((e) => {
         // display error
         console.error('Error loading ffmpeg:', e);
         fileInput.disabled = false;
         cancelSpinner();
         setDefaultText();
+        disableCancel();
         onProgress = null;
         void createPopup('Failed to load FFmpeg: The page will now refresh\nCheck the console for more logs').then(() => {
             window.location.reload();
@@ -261,6 +316,24 @@ fileInput.addEventListener('change', () => {
 const getSettings = () => {
     return {};
 }
+
+const enableCancel = () => {
+    document.getElementById('cancelCurrent').disabled = false;
+    document.getElementById('cancelAll').disabled = false;
+}
+
+const disableCancel = () => {
+    document.getElementById('cancelCurrent').disabled = true;
+    document.getElementById('cancelAll').disabled = true;
+}
+disableCancel();
+
+document.getElementById('cancelCurrent').addEventListener('click', () => {
+    cancelCurrent?.();
+});
+document.getElementById('cancelAll').addEventListener('click', () => {
+    cancelAll?.();
+});
 
 const setProcessingText = () => {
     for (const elem of document.querySelectorAll('[data-processing][data-default]')) {
