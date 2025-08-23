@@ -112,9 +112,13 @@ fileInput.addEventListener('change', async () => {
         }
 
         if ((file.size * 8) <= targetFileSize) { // convert into bits
-            console.log(`File ${inputFileName} is already under desired size!`);
-            await createPopup(`File ${inputFileName} is already under desired size!`);
-            continue;
+            const res = await createPopup(`File ${inputFileName} is already under the desired size!`, {
+                buttons: ['Process Anyway', 'Skip']
+            });
+            if (res === 'Skip') {
+                console.log(`File ${inputFileName} is already under desired size!`);
+                continue;
+            }
         }
 
         const outputFileName = (() => {

@@ -3,9 +3,7 @@
 const eventListeners = [];
 const onclosefuncs = [];
 
-export let currentOk;
-
-export async function createPopup(content, {listeners = [], buttons, classes = [], onclose, beforeRender, overlay} = {}) {
+export async function createPopup(content, {listeners = [], buttons, classes = [], onclose, beforeRender, overlay = true} = {}) {
     if (!overlay) clearPopups();
     return new Promise((resolve) => {
         const center_div = document.createElement('div'),
@@ -48,7 +46,23 @@ export async function createPopup(content, {listeners = [], buttons, classes = [
                 else clearPopups()
                 resolve(value ?? true);
             });
-            currentOk = ok_button;
+        } else if (Array.isArray(buttons)) {
+            buttons_div = document.createElement('div');
+            buttons_div.classList.add('popupButtons');
+            for (const button of buttons) {
+                const btn = document.createElement('button');
+                btn.classList.add('standardButton');
+                btn.textContent = button ?? 'Ok';
+
+                buttons_div.appendChild(btn);
+
+                btn.addEventListener('click', () => {
+                    const value = content.serialise?.();
+                    if (overlay) clearPopups(null, center_div);
+                    else clearPopups()
+                    resolve(value ?? button);
+                });
+            }
         } else {
             buttons_div = buttons;
         }
