@@ -206,13 +206,14 @@ fileInput.addEventListener('change', () => {
     });
 });
 
+const changeEvent = new Event('change');
 const loadFiles = (files) => {
     const validFiles = Array.from(files).filter((f) => f.type.startsWith('video/'));
     if (validFiles.length > 0) {
         const dataTransfer = new DataTransfer();
         for (const file of validFiles) dataTransfer.items.add(file);
         fileInput.files = dataTransfer.files;
-        fileInput.dispatchEvent(new Event('change'));
+        fileInput.dispatchEvent(changeEvent);
     } else {
         console.log('No valid files provided');
     }
