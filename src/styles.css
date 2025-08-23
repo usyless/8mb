@@ -66,10 +66,6 @@ body {
     padding-bottom: var(--spacing);
 }
 
-.hidden {
-    display: none;
-}
-
 #mainBox {
     display: flex;
     flex-direction: column;

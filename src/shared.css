@@ -69,7 +69,7 @@ button.altButton:active {
 }
 
 .hidden, .hidden * {
-    display: none;
+    display: none !important;
 }
 
 .removePointerEvents, .removePointerEvents * {
