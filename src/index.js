@@ -87,6 +87,10 @@ fileInput.addEventListener('change', (e) => {
                 continue;
             }
 
+            const deleteFile = async () => {
+                await Promise.allSettled([ffmpeg.deleteFile(inputFileName)]);
+            }
+
             // get video duration
             let output_info = 'output.txt';
             if (inputFileName === outputFileName) {
@@ -95,13 +99,16 @@ fileInput.addEventListener('change', (e) => {
             const ffprobeStatus = await ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info]);
 
             if (ffprobeStatus !== 0) {
+                await Promise.allSettled([deleteFile(), ffmpeg.deleteFile(output_info)]);
                 console.error('Failed to get duration of video!');
                 continue;
             }
 
             const duration = Number(await ffmpeg.readFile(output_info, "utf8"));
+            await ffmpeg.deleteFile(output_info);
 
             if (Number.isNaN(duration) || duration <= 0) {
+                await deleteFile();
                 console.error('Failed to get duration of video!');
                 continue;
             }
@@ -109,6 +116,7 @@ fileInput.addEventListener('change', (e) => {
             const audioSize = audioBitrate * duration; // bits
 
             if (audioSize >= targetFileSize) {
+                await deleteFile();
                 console.error('Audio of video will be larger than allowed size!');
                 continue;
             }
@@ -124,6 +132,7 @@ fileInput.addEventListener('change', (e) => {
             const ffmpegStatus = await ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / (1024 * 8)}k`, outputFileName]);
 
             if (ffmpegStatus !== 0) {
+                await deleteFile();
                 console.error('Failed to exec ffmpeg command');
                 // error
                 continue;
@@ -138,6 +147,8 @@ fileInput.addEventListener('change', (e) => {
             a.download = outputFileName;
             a.click();
             URL.revokeObjectURL(url);
+
+            await deleteFile();
         }
         fileInput.disabled = false;
     }).catch((e) => {
