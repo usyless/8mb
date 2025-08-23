@@ -40,12 +40,12 @@
     box-sizing: border-box;
     color: var(--text-primary);
     text-align: center;
+    user-select: none;
 }
 
 html {
     width: 100%;
     height: 100%;
-    overflow: hidden;
 }
 
 body {
@@ -61,12 +61,9 @@ body {
 
     width: 100%;
     height: 100%;
-
-    overflow: hidden;
 }
 
 #wrapper {
-    position: absolute;
     top: 0;
     left: 0;
     display: flex;
@@ -76,16 +73,9 @@ body {
 
     width: 100%;
     height: 100%;
-
-    overflow: hidden;
-}
-
-#wrapper > * {
-    position: absolute;
 }
 
 #bottomContent {
-    position: absolute;
     bottom: 0;
     width: 100%;
     padding-bottom: var(--spacing);
@@ -111,6 +101,7 @@ p + p {
 }
 
 #spinner {
+    position: absolute;
     transition: transform 0.3s ease-in-out;
     cursor: pointer;
 }
@@ -133,4 +124,36 @@ p + p {
 
 #spinner:active + #mainBox * {
     text-shadow: 0 0 5px var(--text-primary-lower-opacity);
+}
+
+#settings {
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    border: var(--text-primary) solid var(--spacing-smaller);
+    border-radius: var(--radius-larger);
+
+    padding: 15px 20px;
+    margin: 10px 15px 15px;
+    cursor: pointer;
+    pointer-events: all;
+
+    transition: background-color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
+}
+
+#settings > h3 {
+    margin: 0;
+}
+
+#settings:hover {
+    background-color: #33333399;
+    text-shadow: 0 0 5px var(--text-primary-lower-opacity);
+}
+
+#settings:active {
+    background-color: #333333ee;
+    text-shadow: 0 0 2px var(--text-primary-lower-opacity);
 }
