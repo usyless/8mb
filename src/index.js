@@ -228,6 +228,8 @@ fileInput.addEventListener('change', () => {
             URL.revokeObjectURL(url);
 
             await deleteOutputFile();
+
+            setProgressBar(100, index);
         }
         fileInput.disabled = false;
         cancelSpinner();
