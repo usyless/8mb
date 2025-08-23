@@ -86,10 +86,10 @@ fileInput.addEventListener('change', (e) => {
 
             const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer())));
 
-            const deleteFile = () => runAsync(ffmpeg.deleteFile(inputFileName));
+            const deleteInputFile = () => runAsync(ffmpeg.deleteFile(inputFileName));
 
             if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
-                await deleteFile();
+                await deleteInputFile();
                 console.error('Error writing file:', wroteFile.reason);
                 continue;
             }
@@ -102,7 +102,7 @@ fileInput.addEventListener('change', (e) => {
             const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info]));
 
             if ((ffprobeStatus.status !== "fulfilled") || (ffprobeStatus.value !== 0)) {
-                await runAsync(deleteFile(), ffmpeg.deleteFile(output_info));
+                await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
                 console.error('Failed to get duration of video with error:', ffprobeStatus.reason);
                 continue;
             }
@@ -110,7 +110,7 @@ fileInput.addEventListener('change', (e) => {
             const [durationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8"));
 
             if ((durationResult.status !== "fulfilled")) {
-                await runAsync(deleteFile(), ffmpeg.deleteFile(output_info));
+                await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
                 console.error('Failed to read video duration file with error:', durationResult.reason);
             }
 
@@ -118,7 +118,7 @@ fileInput.addEventListener('change', (e) => {
             await runAsync(ffmpeg.deleteFile(output_info)); // we dont care about the outcome here
 
             if (Number.isNaN(duration) || duration <= 0) {
-                await deleteFile();
+                await deleteInputFile();
                 console.error('Failed to get duration of video!');
                 continue;
             }
@@ -126,7 +126,7 @@ fileInput.addEventListener('change', (e) => {
             const audioSize = audioBitrate * duration; // bits
 
             if (audioSize >= targetFileSize) {
-                await deleteFile();
+                await deleteInputFile();
                 console.error('Audio of video will be larger than allowed size!');
                 continue;
             }
@@ -141,8 +141,12 @@ fileInput.addEventListener('change', (e) => {
 
             const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / (1024 * 8)}k`, outputFileName]));
 
+            await deleteInputFile(); // dont need it anymore after here
+
+            const deleteOutputFile = () => runAsync(ffmpeg.deleteFile(outputFileName));
+
             if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
-                await deleteFile();
+                await deleteOutputFile();
                 console.error('Failed to exec ffmpeg command with error:', ffmpegStatus.reason);
                 continue;
             }
@@ -150,7 +154,7 @@ fileInput.addEventListener('change', (e) => {
             const [videoStatus] = await runAsync(ffmpeg.readFile(outputFileName));
 
             if (videoStatus.status !== "fulfilled") {
-                await deleteFile();
+                await deleteOutputFile();
                 console.error('Failed to read output video file with error:', videoStatus.reason);
                 continue;
             }
@@ -163,7 +167,7 @@ fileInput.addEventListener('change', (e) => {
             a.click();
             URL.revokeObjectURL(url);
 
-            await deleteFile();
+            await deleteOutputFile();
         }
         fileInput.disabled = false;
     }).catch((e) => {
