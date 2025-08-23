@@ -79,6 +79,8 @@ body {
     padding: 30px;
     margin: 15px;
     pointer-events: none;
+
+    z-index: 5;
 }
 
 p + p {
