@@ -214,6 +214,9 @@ fileInput.addEventListener('change', () => {
         cancelSpinner();
         setDefaultText();
         onProgress = null;
+        void createPopup('Failed to load FFmpeg: The page will now refresh').then(() => {
+            window.location.reload();
+        });
     });
 });
 
