@@ -36,8 +36,10 @@ const getFFmpeg = (() => {
                     wasmURL: await toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm')
                 }
                 if (window.crossOriginIsolated) {
-                    console.log('Using MT mode');
+                    console.log('Using multi threaded mode');
                     loadData.workerURL = await toBlobURL(baseURL + 'ffmpeg-core.worker.js', 'text/javascript');
+                } else {
+                    console.log('Using single threaded mode');
                 }
                 console.log('Loading ffmpeg with data:', loadData);
                 await ffmpeg.load(loadData);
@@ -71,18 +73,17 @@ fileInput.addEventListener('change', () => {
     getFFmpeg().then(async (ffmpeg) => {
         console.log(ffmpeg);
         for (const file of files) {
+            const inputFileName = file.name;
             onProgress = null;
             if (!file.type.startsWith('video/')) {
-                console.log('File is not a video file!');
+                console.log(`File ${inputFileName} is not a video file!`);
                 continue;
             }
 
             if ((file.size * 8) <= targetFileSize) { // convert into bits
-                console.log('File is already under desired size!');
+                console.log(`File ${inputFileName} is already under desired size!`);
                 continue;
             }
-
-            const inputFileName = file.name;
 
             const outputFileName = (() => {
                 let fileName;
@@ -105,7 +106,7 @@ fileInput.addEventListener('change', () => {
 
             if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
                 await deleteInputFile();
-                console.error('Error writing file:', wroteFile.reason);
+                console.error(`Error writing file ${inputFileName}:`, wroteFile.reason);
                 continue;
             }
 
@@ -120,7 +121,7 @@ fileInput.addEventListener('change', () => {
 
             if ((ffprobeStatus.status !== "fulfilled") || ((ffprobeStatus.value !== 0) && (ffprobeStatus.value !== -1))) { // it seems to give -1 even on success
                 await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
-                console.error('Failed to get duration of video with error:', ffprobeStatus.reason);
+                console.error(`Failed to get duration of video ${inputFileName} with error:`, ffprobeStatus.reason);
                 continue;
             }
 
@@ -136,7 +137,7 @@ fileInput.addEventListener('change', () => {
 
             if (Number.isNaN(duration) || duration <= 0) {
                 await deleteInputFile();
-                console.error('Failed to get duration of video!');
+                console.error(`Failed to get duration of video ${inputFileName}!`);
                 continue;
             }
 
@@ -151,7 +152,7 @@ fileInput.addEventListener('change', () => {
 
             if (audioSize >= targetFileSize) {
                 await deleteInputFile();
-                console.error('Audio of video will be larger than allowed size!');
+                console.error(`Audio of video ${inputFileName} will be larger than allowed size!`);
                 continue;
             }
 
@@ -161,7 +162,7 @@ fileInput.addEventListener('change', () => {
                 console.log(`progress: ${progress}, time: ${time}`);
             };
 
-            console.log(`Using video bitrate: ${videoBitrate / 1024}kbps and audio bitrate: ${audioBitrate / 1024}kbps`);
+            console.log(`Using video bitrate: ${videoBitrate / 1024}kbps and audio bitrate: ${audioBitrate / 1024}kbps for ${inputFileName}`);
 
             const [ffmpegStatus] = await runAsync(ffmpeg.exec([
                 '-i', inputFileName,
@@ -182,7 +183,7 @@ fileInput.addEventListener('change', () => {
 
             if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
                 await deleteOutputFile();
-                console.error('Failed to exec ffmpeg command with error:', ffmpegStatus.reason);
+                console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
                 continue;
             }
 
@@ -190,7 +191,7 @@ fileInput.addEventListener('change', () => {
 
             if (videoStatus.status !== "fulfilled") {
                 await deleteOutputFile();
-                console.error('Failed to read output video file with error:', videoStatus.reason);
+                console.error(`Failed to read output video file for ${inputFileName} with error:`, videoStatus.reason);
                 continue;
             }
 
@@ -214,7 +215,7 @@ fileInput.addEventListener('change', () => {
         cancelSpinner();
         setDefaultText();
         onProgress = null;
-        void createPopup('Failed to load FFmpeg: The page will now refresh').then(() => {
+        void createPopup('Failed to load FFmpeg: The page will now refresh\nCheck the console for more logs').then(() => {
             window.location.reload();
         });
     });
