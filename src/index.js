@@ -1,9 +1,9 @@
 "use strict";
 
-const { FFmpeg } = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
+const {FFmpeg} = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
 
 const toBlobURL = async (url, mimeType) => URL.createObjectURL(
-    new Blob([await (await fetch(url)).arrayBuffer()], { type: mimeType })
+    new Blob([await (await fetch(url)).arrayBuffer()], {type: mimeType})
 );
 
 let onProgress;
@@ -13,11 +13,11 @@ const getFFmpeg = (() => {
 
     const ffmpeg = new FFmpeg();
 
-    ffmpeg.on('log', ({ message }) => {
+    ffmpeg.on('log', ({message}) => {
         console.info(message);
     });
 
-    ffmpeg.on('progress', ({ progress, time }) => {
+    ffmpeg.on('progress', ({progress, time}) => {
         onProgress?.(progress, time);
     });
 
@@ -46,7 +46,7 @@ const getFFmpeg = (() => {
 
 const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
 
-const audioBitrate = 128 * 1024; // bits -> 128kib
+const audioBitrate = 128 * 1024 * 8; // bits -> 128kib
 
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
@@ -106,11 +106,20 @@ fileInput.addEventListener('change', (e) => {
                 continue;
             }
 
+            const audioSize = audioBitrate * duration; // bits
+
+            if (audioSize >= targetFileSize) {
+                console.error('Audio of video will be larger than allowed size!');
+                continue;
+            }
+
+            const videoBitrate = (targetFileSize - audioSize) / (duration * 1024); // kbps
+
             onProgress = (progress, time) => {
                 console.log(`progress: ${progress}, time: ${time}`);
             };
 
-            const ffmpegStatus = await ffmpeg.exec(['-i', inputFileName, outputFileName]);
+            const ffmpegStatus = await ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / (1024 * 8)}k`, outputFileName]);
 
             if (ffmpegStatus !== 0) {
                 console.error('Failed to exec ffmpeg command');
@@ -122,7 +131,7 @@ fileInput.addEventListener('change', (e) => {
 
             // download video
             const a = document.createElement('a');
-            const url = URL.createObjectURL(new Blob([video.buffer], { type: 'video/mp4' }));
+            const url = URL.createObjectURL(new Blob([video.buffer], {type: 'video/mp4'}));
             a.href = url;
             a.download = outputFileName;
             a.click();
