@@ -44,6 +44,8 @@ const getFFmpeg = (() => {
     }
 })();
 
+const runAsync = (...args) => Promise.allSettled(args);
+
 const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
 
 const audioBitrate = 128 * 1024 * 8; // bits -> 128kib
@@ -79,16 +81,14 @@ fileInput.addEventListener('change', (e) => {
 
             const outputFileName = fileName + '.mp4';
 
-            const wroteFile = await ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer()));
+            const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer())));
 
-            if (!wroteFile) {
-                console.error('Error writing file');
-                // error
+            const deleteFile = () => runAsync(ffmpeg.deleteFile(inputFileName));
+
+            if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
+                await deleteFile();
+                console.error('Error writing file:', wroteFile.reason);
                 continue;
-            }
-
-            const deleteFile = async () => {
-                await Promise.allSettled([ffmpeg.deleteFile(inputFileName)]);
             }
 
             // get video duration
@@ -96,16 +96,23 @@ fileInput.addEventListener('change', (e) => {
             if (inputFileName === outputFileName) {
                 output_info = 'output_not_today.txt';
             }
-            const ffprobeStatus = await ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info]);
+            const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info]));
 
-            if (ffprobeStatus !== 0) {
-                await Promise.allSettled([deleteFile(), ffmpeg.deleteFile(output_info)]);
-                console.error('Failed to get duration of video!');
+            if ((ffprobeStatus.status !== "fulfilled") || (ffprobeStatus.value !== 0)) {
+                await runAsync(deleteFile(), ffmpeg.deleteFile(output_info));
+                console.error('Failed to get duration of video with error:', ffprobeStatus.reason);
                 continue;
             }
 
-            const duration = Number(await ffmpeg.readFile(output_info, "utf8"));
-            await ffmpeg.deleteFile(output_info);
+            const [durationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8"));
+
+            if ((durationResult.status !== "fulfilled")) {
+                await runAsync(deleteFile(), ffmpeg.deleteFile(output_info));
+                console.error('Failed to read video duration file with error:', durationResult.reason);
+            }
+
+            const duration = Number(durationResult.value);
+            await runAsync(ffmpeg.deleteFile(output_info)); // we dont care about the outcome here
 
             if (Number.isNaN(duration) || duration <= 0) {
                 await deleteFile();
@@ -129,20 +136,25 @@ fileInput.addEventListener('change', (e) => {
 
             console.log(`Using video bitrate: ${videoBitrate}kbps and audio bitrate: ${audioBitrate / (1024 * 8)}kbps`);
 
-            const ffmpegStatus = await ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / (1024 * 8)}k`, outputFileName]);
+            const [ffmpegStatus] = await runAsync(ffmpeg.exec(['-i', inputFileName, '-c:v', 'libx264', '-preset', 'ultrafast', '-b:v', `${videoBitrate}k`, '-c:a', 'aac', '-b:a', `${audioBitrate / (1024 * 8)}k`, outputFileName]));
 
-            if (ffmpegStatus !== 0) {
+            if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
                 await deleteFile();
-                console.error('Failed to exec ffmpeg command');
-                // error
+                console.error('Failed to exec ffmpeg command with error:', ffmpegStatus.reason);
                 continue;
             }
 
-            const video = await ffmpeg.readFile(outputFileName);
+            const [videoStatus] = await runAsync(ffmpeg.readFile(outputFileName));
+
+            if (videoStatus.status !== "fulfilled") {
+                await deleteFile();
+                console.error('Failed to read output video file with error:', videoStatus.reason);
+                continue;
+            }
 
             // download video
             const a = document.createElement('a');
-            const url = URL.createObjectURL(new Blob([video.buffer], {type: 'video/mp4'}));
+            const url = URL.createObjectURL(new Blob([videoStatus.value.buffer], {type: 'video/mp4'}));
             a.href = url;
             a.download = outputFileName;
             a.click();
