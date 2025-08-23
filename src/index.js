@@ -15,7 +15,8 @@ const getFFmpeg = (() => {
 
     ffmpeg.on('log', ({message}) => {
         if (message?.startsWith('worker sent an error!')) {
-            // fatal error -> show thing to refresh page
+            alert('Fatal error occurred, site will refresh!');
+            window.location.reload();
         }
         console.info(message);
     });
