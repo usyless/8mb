@@ -357,7 +357,7 @@ const showSettings = () => {
         };
     }
     createPopup(set, {buttons: 'Save Settings'}).then((value) => {
-        localStorage.setItem('settings', JSON.stringify(value));
+        if (typeof value === 'object') localStorage.setItem('settings', JSON.stringify(value));
     });
 }
 document.getElementById('settings').addEventListener('click', showSettings);
