@@ -168,10 +168,7 @@ fileInput.addEventListener('change', async () => {
 
         setProgressBar(2, index);
 
-        const deleteInputFile = () => runAsync(ffmpeg.deleteFile(inputFileName));
-
         if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
-            await deleteInputFile();
             console.error(`Error writing file ${inputFileName}:`, wroteFile.reason);
             await createPopup(`Error writing file ${inputFileName}: ${wroteFile.reason}`);
             continue;
@@ -195,7 +192,6 @@ fileInput.addEventListener('change', async () => {
         setProgressBar(5, index);
 
         if ((ffprobeStatus.status !== "fulfilled") || ((ffprobeStatus.value !== 0) && (ffprobeStatus.value !== -1))) { // it seems to give -1 even on success
-            await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
             console.error(`Failed to get duration of video ${inputFileName} with error:`, ffprobeStatus.reason);
             await createPopup(`Failed to get duration of video ${inputFileName} with error: ${ffprobeStatus.reason}`);
             continue;
@@ -207,17 +203,14 @@ fileInput.addEventListener('change', async () => {
         else if (currentCancelled) continue;
 
         if ((durationResult.status !== "fulfilled")) {
-            await runAsync(deleteInputFile(), ffmpeg.deleteFile(output_info));
             console.error('Failed to read video duration file with error:', durationResult.reason);
             await createPopup(`Failed to read video duration file with error: ${durationResult.reason}`);
             continue;
         }
 
         const duration = Number(durationResult.value);
-        await runAsync(ffmpeg.deleteFile(output_info)); // we dont care about the outcome here
 
         if (Number.isNaN(duration) || duration <= 0) {
-            await deleteInputFile();
             console.error(`Failed to get duration of video ${inputFileName}!`);
             await createPopup(`Failed to get duration of video ${inputFileName}!`);
             continue;
@@ -240,7 +233,6 @@ fileInput.addEventListener('change', async () => {
         // dont check against leeway here incase its gone super low and still isn't passing
         // although that shouldn't be the case ever
         if (audioSize >= targetSize) {
-            await deleteInputFile();
             console.error(`Audio of video ${inputFileName} will be larger than target size!`);
 
             if (settings.customAudioBitrate) {
@@ -283,12 +275,7 @@ fileInput.addEventListener('change', async () => {
         if (allCancelled) break;
         else if (currentCancelled) continue;
 
-        await deleteInputFile(); // dont need it anymore after here
-
-        const deleteOutputFile = () => runAsync(ffmpeg.deleteFile(outputFileName));
-
         if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
-            await deleteOutputFile();
             console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
             await createPopup(`Failed to exec ffmpeg command for video ${inputFileName} with error: ${ffmpegStatus.reason}`);
             continue;
@@ -300,7 +287,6 @@ fileInput.addEventListener('change', async () => {
         else if (currentCancelled) continue;
 
         if (videoStatus.status !== "fulfilled") {
-            await deleteOutputFile();
             console.error(`Failed to read output video file for ${inputFileName} with error:`, videoStatus.reason);
             await createPopup(`Failed to read output video file for ${inputFileName} with error: ${videoStatus.reason}`);
             continue;
@@ -314,8 +300,6 @@ fileInput.addEventListener('change', async () => {
         a.click();
         URL.revokeObjectURL(url);
 
-        await deleteOutputFile();
-
         setProgressBar(100, index);
     }
 
@@ -325,15 +309,8 @@ fileInput.addEventListener('change', async () => {
     setDefaultText();
     disableCancel();
 
+    // always terminate at the end
     ffmpeg.terminate();
-
-    if (allCancelled) {
-        console.log('Terminating as all cancelled');
-        ffmpeg.terminate();
-    } else if (currentCancelled) {
-        console.log('Terminating as one cancelled and end reached');
-        ffmpeg.terminate();
-    }
 });
 
 const settingsTemplate = document.getElementById('settingsTemplate');
