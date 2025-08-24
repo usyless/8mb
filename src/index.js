@@ -237,8 +237,8 @@ fileInput.addEventListener('change', async () => {
         // although that shouldn't be the case ever
         if (audioSize >= targetSize) {
             await deleteInputFile();
-            console.error(`Audio of video ${inputFileName} will be larger than allowed size!`);
-            await createPopup(`Audio of video ${inputFileName} will be larger than allowed size!`);
+            console.error(`Audio of video ${inputFileName} will be larger than target size!`);
+            await createPopup(`Audio of video ${inputFileName} will be larger than target size!`);
             continue;
         }
 
