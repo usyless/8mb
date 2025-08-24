@@ -232,6 +232,11 @@ select {
         outline: none;
         border-color: var(--primary-lighter);
     }
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.3;
+    }
 }
 
 input[type="text"] {
@@ -245,4 +250,14 @@ input[type="text"] {
     align-items: flex-start;
     gap: var(--spacing-largest);
     padding: var(--spacing-larger);
+}
+
+#defaultVideoSizeWrapper {
+    display: flex;
+    flex-direction: column;
+
+    select {
+        flex-grow: 0;
+        width: auto;
+    }
 }

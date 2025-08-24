@@ -356,7 +356,10 @@ const showSettings = () => {
         };
     }
     createPopup(set, {buttons: 'Save Settings'}).then((value) => {
-        if (typeof value === 'object') localStorage.setItem('settings', JSON.stringify(value));
+        if (typeof value === 'object') {
+            localStorage.setItem('settings', JSON.stringify(value));
+            updateDefaultVideoSize();
+        }
     });
 }
 document.getElementById('settings').addEventListener('click', showSettings);
@@ -392,10 +395,25 @@ const getSettings = () => {
     return set;
 }
 
-document.getElementById('defaultVideoSize').addEventListener('change', (e) => {
+const defaultVideoSizeElem = document.getElementById('defaultVideoSize');
+defaultVideoSizeElem.addEventListener('change', (e) => {
     localStorage.setItem('settings', JSON.stringify({...getSettings(), defaultVideoSize: e.currentTarget.value}));
 });
-document.getElementById('defaultVideoSize').value = getSettings().defaultVideoSize;
+
+const updateDefaultVideoSize = () => {
+    const set = getSettings();
+
+    defaultVideoSizeElem.value = set.defaultVideoSize;
+
+    if (set.targetFileSize) {
+        defaultVideoSizeElem.nextElementSibling.classList.remove('noOpacity');
+        defaultVideoSizeElem.disabled = true;
+    } else {
+        defaultVideoSizeElem.nextElementSibling.classList.add('noOpacity');
+        defaultVideoSizeElem.disabled = false;
+    }
+}
+updateDefaultVideoSize();
 
 const enableCancel = () => {
     document.getElementById('cancelCurrent').disabled = false;

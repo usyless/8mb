@@ -87,3 +87,7 @@ button.altButton:active {
 .lowOpacity {
     opacity: 0.2;
 }
+
+.noOpacity {
+    opacity: 0;
+}
