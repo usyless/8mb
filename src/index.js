@@ -1,7 +1,6 @@
 "use strict";
 
 import {createPopup} from "./popups.js";
-import {set} from "express/lib/application";
 
 const {FFmpeg} = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
 
