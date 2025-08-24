@@ -200,7 +200,7 @@ p {
     > :first-child {
         position: absolute;
         height: 100%;
-        transition: width 0.1s ease-in-out;
+        transition: width 0.1s ease-in-out !important;
         background-color: var(--progress);
         width: 0;
     }
