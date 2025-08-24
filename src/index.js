@@ -105,12 +105,45 @@ fileInput.addEventListener('change', async () => {
         }
         currentCancelled = false;
         ++index;
-        const inputFileName = file.name;
         onProgress = null;
+
+        const originalInputFileName = file.name;
+
         if (!file.type.startsWith('video/')) {
-            console.log(`File ${inputFileName} is not a video file!`);
-            await createPopup(`File ${inputFileName} is not a video file!`);
+            console.log(`File ${originalInputFileName} is not a video file!`);
+            await createPopup(`File ${originalInputFileName} is not a video file!`);
             continue;
+        }
+
+        let inputFileName = file.name;
+
+        const [inputFileNameNoExtension, inputFileExtension] = (() => {
+            let fileName;
+            let extension = '';
+
+            const split = inputFileName.split('.');
+            if (split.length > 1) {
+                extension = `.${split.pop()}`;
+                fileName = split.join('.');
+            } else {
+                fileName = split[0];
+            }
+            return [fileName, extension];
+        })();
+
+        const [currentFS] = await runAsync(ffmpeg.listDir("/"));
+
+        if (currentFS.status !== "fulfilled") {
+            console.error(`Error reading ffmpeg directory for file ${originalInputFileName}:`, currentFS.reason);
+            await createPopup(`Error reading ffmpeg directory for file ${originalInputFileName}: ${currentFS.reason}`);
+            continue;
+        }
+
+        for (const {name} of currentFS) {
+            if (inputFileName === name) {
+                inputFileName = `${inputFileNameNoExtension}_inputUSY${inputFileExtension}`;
+                break;
+            }
         }
 
         const targetSize = ((settings.targetFileSize)
@@ -119,7 +152,7 @@ fileInput.addEventListener('change', async () => {
         ) * 1000 * 1000 * 8 * codecOverheadMultiplier;
 
         if ((file.size * 8) <= targetSize) { // convert into bits
-            const res = await createPopup(`File ${inputFileName} is already under the desired size!`, {
+            const res = await createPopup(`File ${originalInputFileName} is already under the desired size!`, {
                 buttons: ['Process Anyway', 'Skip']
             });
             if (res === 'Skip') {
@@ -128,18 +161,7 @@ fileInput.addEventListener('change', async () => {
             }
         }
 
-        const outputFileName = (() => {
-            let fileName;
-
-            const split = inputFileName.split('.');
-            if (split.length > 1) {
-                split.pop();
-                fileName = split.join('.');
-            } else {
-                fileName = split[0];
-            }
-            return fileName + '_usyless.uk_8mb.mp4';
-        })();
+        const outputFileName = inputFileNameNoExtension + '_usyless.uk_8mb.mp4';
 
         console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
 
@@ -170,7 +192,7 @@ fileInput.addEventListener('change', async () => {
 
         if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
             console.error(`Error writing file ${inputFileName}:`, wroteFile.reason);
-            await createPopup(`Error writing file ${inputFileName}: ${wroteFile.reason}`);
+            await createPopup(`Error writing file ${originalInputFileName}: ${wroteFile.reason}`);
             continue;
         }
 
@@ -193,7 +215,7 @@ fileInput.addEventListener('change', async () => {
 
         if ((ffprobeStatus.status !== "fulfilled") || ((ffprobeStatus.value !== 0) && (ffprobeStatus.value !== -1))) { // it seems to give -1 even on success
             console.error(`Failed to get duration of video ${inputFileName} with error:`, ffprobeStatus.reason);
-            await createPopup(`Failed to get duration of video ${inputFileName} with error: ${ffprobeStatus.reason}`);
+            await createPopup(`Failed to get duration of video ${originalInputFileName} with error: ${ffprobeStatus.reason}`);
             continue;
         }
 
@@ -212,7 +234,7 @@ fileInput.addEventListener('change', async () => {
 
         if (Number.isNaN(duration) || duration <= 0) {
             console.error(`Failed to get duration of video ${inputFileName}!`);
-            await createPopup(`Failed to get duration of video ${inputFileName}!`);
+            await createPopup(`Failed to get duration of video ${originalInputFileName}!`);
             continue;
         }
 
@@ -237,9 +259,9 @@ fileInput.addEventListener('change', async () => {
 
             if (settings.customAudioBitrate) {
                 console.error(`This is potentially due to the custom set bitrate of ${settings.customAudioBitrate}kbps`);
-                await createPopup(`Audio of video ${inputFileName} will be larger than target size!\nMaybe try disabling your custom audio bitrate (${settings.customAudioBitrate}kbps)`);
+                await createPopup(`Audio of video ${originalInputFileName} will be larger than target size!\nMaybe try disabling your custom audio bitrate (${settings.customAudioBitrate}kbps)`);
             } else {
-                await createPopup(`Audio of video ${inputFileName} will be larger than target size!`);
+                await createPopup(`Audio of video ${originalInputFileName} will be larger than target size!`);
             }
             continue;
         }
@@ -277,7 +299,7 @@ fileInput.addEventListener('change', async () => {
 
         if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
             console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
-            await createPopup(`Failed to exec ffmpeg command for video ${inputFileName} with error: ${ffmpegStatus.reason}`);
+            await createPopup(`Failed to exec ffmpeg command for video ${originalInputFileName} with error: ${ffmpegStatus.reason}`);
             continue;
         }
 
@@ -288,7 +310,7 @@ fileInput.addEventListener('change', async () => {
 
         if (videoStatus.status !== "fulfilled") {
             console.error(`Failed to read output video file for ${inputFileName} with error:`, videoStatus.reason);
-            await createPopup(`Failed to read output video file for ${inputFileName} with error: ${videoStatus.reason}`);
+            await createPopup(`Failed to read output video file for ${originalInputFileName} with error: ${videoStatus.reason}`);
             continue;
         }
 
