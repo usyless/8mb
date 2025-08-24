@@ -139,7 +139,7 @@ fileInput.addEventListener('change', async () => {
             continue;
         }
 
-        for (const {name} of currentFS) {
+        for (const {name} of currentFS.value) {
             if (inputFileName === name) {
                 inputFileName = `${inputFileNameNoExtension}_inputUSY${inputFileExtension}`;
                 break;
