@@ -439,6 +439,7 @@ const loadFiles = (files) => {
         fileInput.dispatchEvent(changeEvent);
     } else {
         console.log('No valid files provided');
+        void createPopup('No valid files provided!');
     }
 }
 
