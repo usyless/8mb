@@ -217,24 +217,28 @@ fileInput.addEventListener('change', async () => {
             continue;
         }
 
+        const targetSize = ((settings.targetFileSize)
+            ? (settings.targetFileSize * 1000 * 1000 * 8)
+            : (targetFileSize)
+        ) * 0.9; // this differs to before as settings in MB not MiB
+
         let audioBitrate; // bps
         let audioSize; // bits
 
         for (const audioBR of auto_audio_bitrates) {
             audioBitrate = audioBR;
             audioSize = audioBR * duration;
-            if (audioSize < targetFileSize) break;
+            if (audioSize < targetSize) break;
         }
 
-        if (audioSize >= targetFileSize) {
+        if (audioSize >= targetSize) {
             await deleteInputFile();
             console.error(`Audio of video ${inputFileName} will be larger than allowed size!`);
             await createPopup(`Audio of video ${inputFileName} will be larger than allowed size!`);
             continue;
         }
 
-        const targetFileSizeAdjusted = targetFileSize * 0.9;
-        const videoBitrate = Math.floor((targetFileSizeAdjusted - audioSize) / duration); // bps
+        const videoBitrate = Math.floor((targetSize - audioSize) / duration); // bps
 
         onProgress = (progress, time) => {
             console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
@@ -243,12 +247,16 @@ fileInput.addEventListener('change', async () => {
             }
         };
 
-        console.log(`Using video bitrate: ${videoBitrate / 1000}kbps and audio bitrate: ${audioBitrate / 1000}kbps for ${inputFileName}`);
+        let preset = ffmpeg_presets.includes(settings.ffmpegPreset)
+            ? (settings.ffmpegPreset)
+            : (ffmpeg_presets[0]);
+
+        console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
 
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
             '-c:v', 'libx264',
-            '-preset', ffmpeg_presets[0],
+            '-preset', preset,
             '-b:v', videoBitrate.toString(),
             '-maxrate', videoBitrate.toString(),
             '-c:a', 'aac',
