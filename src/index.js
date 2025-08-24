@@ -54,6 +54,7 @@ const runAsync = (...args) => Promise.allSettled(args);
 
 const targetFileSize = 8 * 1000 * 1000 * 8; // bits -> 8MB
 const codecOverheadMultiplier = 0.9;
+const maxAudioSizeMultiplier = 0.5;
 
 const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000, 8 * 1000]; // bits
@@ -229,9 +230,11 @@ fileInput.addEventListener('change', async () => {
         for (const audioBR of auto_audio_bitrates) {
             audioBitrate = audioBR;
             audioSize = audioBR * duration;
-            if (audioSize < targetSize) break;
+            if (audioSize < (targetSize * maxAudioSizeMultiplier)) break;
         }
 
+        // dont check against leeway here incase its gone super low and still isn't passing
+        // although that shouldn't be the case ever
         if (audioSize >= targetSize) {
             await deleteInputFile();
             console.error(`Audio of video ${inputFileName} will be larger than allowed size!`);
