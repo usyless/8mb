@@ -80,6 +80,8 @@ fileInput.addEventListener('change', async () => {
 
     setProgressBar(0, 1);
 
+    const settings = getSettings();
+
     let ffmpeg;
 
     let index = 0;
@@ -88,7 +90,7 @@ fileInput.addEventListener('change', async () => {
         ffmpeg?.terminate();
 
         try {
-            ffmpeg = await getFFmpeg();
+            ffmpeg = await getFFmpeg(settings.forceSingleThreaded);
         } catch (e) {
             console.error('Error loading ffmpeg:', e);
             fileInput.disabled = false;
@@ -313,33 +315,48 @@ fileInput.addEventListener('change', async () => {
 });
 
 const settingsTemplate = document.getElementById('settingsTemplate');
-const showSettings = async () => {
+const showSettings = () => {
     const set = settingsTemplate.content.cloneNode(true);
     const currSet = getSettings() ?? {};
 
-    set.querySelector('#forceSingleThreaded').checked = !!currSet.forceSingleThreaded ?? false;
-    set.querySelector('#targetFileSize').value = Number(currSet.targetFileSize) || 0;
-    set.querySelector('#ffmpegPreset').value = currSet.ffmpegPreset || "ultrafast";
+    set.querySelector('#forceSingleThreaded').checked = currSet.forceSingleThreaded;
+    set.querySelector('#targetFileSize').value = currSet.targetFileSize;
+    set.querySelector('#ffmpegPreset').value = currSet.ffmpegPreset;
 
     set.serialise = () => {
         const set = document.getElementById('settingsMenu');
-        const settings = {
+        return {
             forceSingleThreaded: set.querySelector('#forceSingleThreaded').checked,
             targetFileSize: +set.querySelector('#targetFileSize').value,
             ffmpegPreset: set.querySelector('#ffmpegPreset').value
         };
-
-        if (settings.targetFileSize <= 0) settings.targetFileSize = 0;
-        return settings;
     }
-
-    const newSettings = await createPopup(set);
-    localStorage.setItem('settings', JSON.stringify(newSettings));
+    createPopup(set).then((value) => {
+        localStorage.setItem('settings', JSON.stringify(value));
+    });
 }
 document.getElementById('settings').addEventListener('click', showSettings);
 
 const getSettings = () => {
-    return JSON.parse(localStorage.getItem('settings'));
+    let set = JSON.parse(localStorage.getItem('settings')) || {};
+
+    if (typeof set !== 'object') {
+        set = {};
+    }
+
+    if (typeof set.forceSingleThreaded !== 'boolean') {
+        set.forceSingleThreaded = false;
+    }
+
+    if (typeof set.targetFileSize !== 'number' || set.targetFileSize < 0) {
+        set.targetFileSize = 0;
+    }
+
+    if (typeof set.ffmpegPreset !== 'string') {
+        set.ffmpegPreset = "ultrafast";
+    }
+
+    return set;
 }
 
 const enableCancel = () => {
