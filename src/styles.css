@@ -82,6 +82,10 @@ body {
     max-width: 100%;
 
     z-index: 5;
+
+    h1 {
+        margin-top: 0;
+    }
 }
 
 p + p {
