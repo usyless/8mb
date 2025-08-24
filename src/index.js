@@ -1,6 +1,7 @@
 "use strict";
 
 import {createPopup} from "./popups.js";
+import {set} from "express/lib/application";
 
 const {FFmpeg} = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
 
@@ -226,10 +227,15 @@ fileInput.addEventListener('change', async () => {
         let audioBitrate; // bps
         let audioSize; // bits
 
-        for (const audioBR of auto_audio_bitrates) {
-            audioBitrate = audioBR;
-            audioSize = audioBR * duration;
-            if (audioSize < (targetSize * maxAudioSizeMultiplier)) break;
+        if (settings.customAudioBitrate) {
+            audioBitrate = settings.customAudioBitrate * 1000;
+            audioSize = audioBitrate * duration;
+        } else {
+            for (const audioBR of auto_audio_bitrates) {
+                audioBitrate = audioBR;
+                audioSize = audioBR * duration;
+                if (audioSize < (targetSize * maxAudioSizeMultiplier)) break;
+            }
         }
 
         // dont check against leeway here incase its gone super low and still isn't passing
@@ -237,7 +243,13 @@ fileInput.addEventListener('change', async () => {
         if (audioSize >= targetSize) {
             await deleteInputFile();
             console.error(`Audio of video ${inputFileName} will be larger than target size!`);
-            await createPopup(`Audio of video ${inputFileName} will be larger than target size!`);
+
+            if (settings.customAudioBitrate) {
+                console.error(`This is potentially due to the custom set bitrate of ${settings.customAudioBitrate}kbps`);
+                await createPopup(`Audio of video ${inputFileName} will be larger than target size!\nMaybe try disabling your custom audio bitrate (${settings.customAudioBitrate}kbps)`);
+            } else {
+                await createPopup(`Audio of video ${inputFileName} will be larger than target size!`);
+            }
             continue;
         }
 
@@ -332,6 +344,7 @@ const showSettings = () => {
 
     set.querySelector('#forceSingleThreaded').checked = currSet.forceSingleThreaded;
     set.querySelector('#targetFileSize').value = currSet.targetFileSize;
+    set.querySelector('#customAudioBitrate').value = currSet.customAudioBitrate;
     set.querySelector('#ffmpegPreset').value = currSet.ffmpegPreset;
 
     set.serialise = () => {
@@ -339,6 +352,7 @@ const showSettings = () => {
         return {
             forceSingleThreaded: set.querySelector('#forceSingleThreaded').checked,
             targetFileSize: +set.querySelector('#targetFileSize').value,
+            customAudioBitrate: +set.querySelector('#customAudioBitrate').value,
             ffmpegPreset: set.querySelector('#ffmpegPreset').value,
             defaultVideoSize: document.getElementById('defaultVideoSize').value
         };
@@ -362,6 +376,10 @@ const getSettings = () => {
 
     if (typeof set.targetFileSize !== 'number' || set.targetFileSize < 0) {
         set.targetFileSize = 0;
+    }
+
+    if (typeof set.customAudioBitrate !== 'number' || set.customAudioBitrate < 0) {
+        set.customAudioBitrate = 0;
     }
 
     if (typeof set.ffmpegPreset !== 'string') {

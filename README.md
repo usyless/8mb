@@ -6,4 +6,5 @@ Uses ffmpeg.wasm! Therefore performance isn't great, but there is no server invo
 ## Settings
 - Force single threaded mode (multi threaded doesnt work in some browsers such as edge)
 - Target file size
+- Custom audio bitrate
 - FFmpeg quality preset
