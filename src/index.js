@@ -560,9 +560,11 @@ const resizeSpinner = () => {
 
     if (spinnerRunning) startSpinner();
 }
-resizeSpinner();
-startSpinner();
-cancelSpinner();
+requestAnimationFrame(() => {
+    resizeSpinner();
+    startSpinner();
+    cancelSpinner();
+});
 
 window.addEventListener('resize', resizeSpinner, {passive: true});
 
