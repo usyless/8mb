@@ -52,7 +52,7 @@ let cancelAll;
 
 const runAsync = (...args) => Promise.allSettled(args);
 
-const targetFileSize = 8 * 1024 * 1024 * 8; // bits -> 8mib
+const targetFileSize = 8 * 1000 * 1000 * 8; // bits -> 8MB
 
 const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000, 8 * 1000]; // bits
@@ -112,7 +112,12 @@ fileInput.addEventListener('change', async () => {
             continue;
         }
 
-        if ((file.size * 8) <= targetFileSize) { // convert into bits
+        const targetSize = ((settings.targetFileSize)
+            ? (settings.targetFileSize * 1000 * 1000 * 8)
+            : (targetFileSize)
+        ) * 0.9;
+
+        if ((file.size * 8) <= targetSize) { // convert into bits
             const res = await createPopup(`File ${inputFileName} is already under the desired size!`, {
                 buttons: ['Process Anyway', 'Skip']
             });
@@ -216,11 +221,6 @@ fileInput.addEventListener('change', async () => {
             await createPopup(`Failed to get duration of video ${inputFileName}!`);
             continue;
         }
-
-        const targetSize = ((settings.targetFileSize)
-            ? (settings.targetFileSize * 1000 * 1000 * 8)
-            : (targetFileSize)
-        ) * 0.9; // this differs to before as settings in MB not MiB
 
         let audioBitrate; // bps
         let audioSize; // bits
