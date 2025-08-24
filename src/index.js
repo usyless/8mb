@@ -52,7 +52,6 @@ let cancelAll;
 
 const runAsync = (...args) => Promise.allSettled(args);
 
-const targetFileSize = 8 * 1000 * 1000 * 8; // bits -> 8MB
 const codecOverheadMultiplier = 0.9;
 const maxAudioSizeMultiplier = 0.5;
 
@@ -115,9 +114,9 @@ fileInput.addEventListener('change', async () => {
         }
 
         const targetSize = ((settings.targetFileSize)
-            ? (settings.targetFileSize * 1000 * 1000 * 8)
-            : (targetFileSize)
-        ) * codecOverheadMultiplier;
+            ? (settings.targetFileSize)
+            : (+settings.defaultVideoSize)
+        ) * 1000 * 1000 * 8 * codecOverheadMultiplier;
 
         if ((file.size * 8) <= targetSize) { // convert into bits
             const res = await createPopup(`File ${inputFileName} is already under the desired size!`, {
@@ -340,7 +339,8 @@ const showSettings = () => {
         return {
             forceSingleThreaded: set.querySelector('#forceSingleThreaded').checked,
             targetFileSize: +set.querySelector('#targetFileSize').value,
-            ffmpegPreset: set.querySelector('#ffmpegPreset').value
+            ffmpegPreset: set.querySelector('#ffmpegPreset').value,
+            defaultVideoSize: document.getElementById('defaultVideoSize').value
         };
     }
     createPopup(set).then((value) => {
@@ -368,8 +368,18 @@ const getSettings = () => {
         set.ffmpegPreset = "ultrafast";
     }
 
+    const defaultVideoSizes = ["8", "10", "25", "50"];
+    if (!defaultVideoSizes.includes(set.defaultVideoSize)) {
+        set.defaultVideoSize = "8";
+    }
+
     return set;
 }
+
+document.getElementById('defaultVideoSize').addEventListener('change', (e) => {
+    localStorage.setItem('settings', JSON.stringify({...getSettings(), defaultVideoSize: e.currentTarget.value}));
+});
+document.getElementById('defaultVideoSize').value = getSettings().defaultVideoSize;
 
 const enableCancel = () => {
     document.getElementById('cancelCurrent').disabled = false;
