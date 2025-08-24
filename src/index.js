@@ -53,6 +53,7 @@ let cancelAll;
 const runAsync = (...args) => Promise.allSettled(args);
 
 const targetFileSize = 8 * 1000 * 1000 * 8; // bits -> 8MB
+const codecOverheadMultiplier = 0.9;
 
 const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000, 8 * 1000]; // bits
@@ -115,7 +116,7 @@ fileInput.addEventListener('change', async () => {
         const targetSize = ((settings.targetFileSize)
             ? (settings.targetFileSize * 1000 * 1000 * 8)
             : (targetFileSize)
-        ) * 0.9;
+        ) * codecOverheadMultiplier;
 
         if ((file.size * 8) <= targetSize) { // convert into bits
             const res = await createPopup(`File ${inputFileName} is already under the desired size!`, {
