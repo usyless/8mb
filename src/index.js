@@ -356,7 +356,7 @@ const showSettings = () => {
             defaultVideoSize: document.getElementById('defaultVideoSize').value
         };
     }
-    createPopup(set).then((value) => {
+    createPopup(set, {buttons: 'Save Settings'}).then((value) => {
         localStorage.setItem('settings', JSON.stringify(value));
     });
 }
