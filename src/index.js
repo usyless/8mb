@@ -145,8 +145,6 @@ fileInput.addEventListener('change', async () => {
 
         setProgressBar(1, index);
 
-        enableCancel();
-
         const abort = new AbortController();
 
         cancelCurrent = () => {
@@ -160,6 +158,8 @@ fileInput.addEventListener('change', async () => {
             allCancelled = true;
             abort.abort();
         }
+
+        enableCancel();
 
         const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer()), {signal: abort.signal}));
 
