@@ -478,6 +478,7 @@ document.addEventListener('paste', (e) => {
         loadFiles(d.files);
     } else {
         console.log('No files provided in paste');
+        void createPopup('No valid files provided in paste!');
     }
 });
 spinner.addEventListener('click', () => {
