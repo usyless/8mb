@@ -143,6 +143,25 @@ p {
     transition: background-color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
 }
 
+#footer > :first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+#footer > :not(:first-child):not(:last-child) {
+    border-radius: 0;
+}
+
+#footer > :last-child {
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+}
+
+#footer:has(:last-child.hidden) > :nth-last-child(2) {
+    border-top-right-radius: var(--radius-larger);
+    border-bottom-right-radius: var(--radius-larger);
+}
+
 #footer h3 {
     margin: 0;
 }
