@@ -1,3 +1,5 @@
+<h1 align="center"><a href="https://usyless.uk/8mb"><img src="https://github.com/usyless/8mb/blob/main/src/favicon.svg?raw=true" alt="logo" width="160" height="160"></a><br>8mb</h1><h3 align="center">Browser based video compressor</h3>
+
 # 8mb - by usy
 A local browser based video compressor which targets 8mb videos by default
 
