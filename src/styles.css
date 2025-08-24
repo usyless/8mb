@@ -243,6 +243,7 @@ select {
     border: solid var(--primary-lighter) 2px;
     padding: 7px;
     min-width: 0;
+    max-width: 100%;
     flex-shrink: 1;
     cursor: pointer;
 
@@ -268,10 +269,23 @@ input[type="text"] {
 #settingsMenu {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: flex-start;
+    justify-content: center;
+    align-items: center;
     gap: var(--spacing-largest);
     padding: var(--spacing-larger);
+
+    > * {
+        min-width: 0;
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+
+        * {
+            max-width: 100%;
+        }
+    }
 }
 
 #defaultVideoSizeWrapper {
