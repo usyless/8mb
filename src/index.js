@@ -549,9 +549,10 @@ const startSpinner = (() => {
 })();
 
 const resizeSpinner = () => {
+    const {top: parentTop, left: parentLeft} = mainBox.parentElement.getBoundingClientRect();
     const {width, height, top, left} = mainBox.getBoundingClientRect();
-    spinner.style.top = `${top}px`;
-    spinner.style.left = `${left}px`;
+    spinner.style.top = `${top - parentTop}px`;
+    spinner.style.left = `${left - parentLeft}px`;
     spinner.setAttributeNS(null, 'viewBox', `0 0 ${width} ${height}`);
     spinner.setAttributeNS(null, 'width', `${width}px`);
     spinner.setAttributeNS(null, 'height', `${height}px`);

@@ -50,6 +50,7 @@ body {
 }
 
 #wrapper {
+    position: relative;
     top: 0;
     left: 0;
     display: flex;
@@ -62,6 +63,7 @@ body {
 }
 
 #bottomContent {
+    position: relative;
     bottom: 0;
     width: 100%;
     padding-bottom: var(--spacing);
