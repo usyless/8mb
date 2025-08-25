@@ -355,8 +355,34 @@ fileInput.addEventListener('change', async () => {
 
         if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
             console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
-            await createPopup(`Failed to exec ffmpeg command for video ${originalInputFileName} with error: ${ffmpegStatus.reason}`);
-            continue;
+
+            if (dimensions.length > 0) {
+                // try again with no limit
+                const [ffmpegStatus] = await runAsync(ffmpeg.exec([
+                    '-i', inputFileName,
+                    '-c:v', 'libx264',
+                    '-preset', preset,
+                    '-b:v', videoBitrate.toString(),
+                    '-maxrate', videoBitrate.toString(),
+                    '-c:a', 'aac',
+                    '-b:a', audioBitrate.toString(),
+                    outputFileName
+                ], -1, {signal: abort.signal}));
+
+                console.log('FFMpeg:', ffmpegStatus);
+
+                if (allCancelled) break;
+                else if (currentCancelled) continue;
+
+                if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
+                    console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
+                    await createPopup(`Failed to exec ffmpeg command for video ${originalInputFileName} with error: ${ffmpegStatus.reason}`);
+                    continue;
+                }
+            } else {
+                await createPopup(`Failed to exec ffmpeg command for video ${originalInputFileName} with error: ${ffmpegStatus.reason}`);
+                continue;
+            }
         }
 
         const [videoStatus] = await runAsync(ffmpeg.readFile(outputFileName, "binary", {signal: abort.signal}));
