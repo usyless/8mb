@@ -65,7 +65,7 @@ let cancelAll;
 const runAsync = (...args) => Promise.allSettled(args);
 
 const codecOverheadMultiplier = 0.9;
-const maxAudioSizeMultiplier = 0.5;
+const maxAudioSizeMultiplier = 0.1;
 
 const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000, 8 * 1000]; // bits
