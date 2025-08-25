@@ -21,8 +21,6 @@ const localStorageSettingsName = '8mb-settings';
 const ffmpegSingleBase = 'ffmpeg/';
 const ffmpegMTBase = 'ffmpeg-mt/';
 
-let onProgress;
-
 if (navigator.userAgent.includes('Edg/')) {
     for (const elem of document.querySelectorAll('[data-edge]')) elem.classList.remove('hidden');
 }
@@ -32,10 +30,6 @@ const getFFmpeg = (() => {
 
     ffmpeg.on('log', ({message}) => {
         console.info(message);
-    });
-
-    ffmpeg.on('progress', ({progress, time}) => {
-        onProgress?.(progress, time);
     });
 
     return async (forceSingleThreaded, signal) => {
@@ -162,12 +156,10 @@ fileInput.addEventListener('change', async () => {
             else if (currentCancelled) continue;
         } catch (e) {
             console.error('Error loading ffmpeg:', e);
-            onProgress = null;
             await createPopup('Failed to load FFmpeg, maybe try again in single threaded mode?');
             break;
         }
         ++index;
-        onProgress = null;
 
         if (!file.type.startsWith('video/')) {
             console.log(`File ${originalInputFileName} is not a video file!`);
@@ -329,13 +321,6 @@ fileInput.addEventListener('change', async () => {
 
         const videoBitrate = Math.floor((targetSize - audioSize) / duration); // bps
 
-        onProgress = (progress, time) => {
-            console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
-            if (progress <= 1 && progress >= 0) {
-                setProgressBar((5 + (95 * progress)).toFixed(1), index);
-            }
-        };
-
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
 
         const dimensions = [];
@@ -354,6 +339,15 @@ fileInput.addEventListener('change', async () => {
 
         console.log(`Setting dimensions:`, dimensions);
 
+        const onProgress = ({progress, time}) => {
+            console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
+            if (progress <= 1 && progress >= 0) {
+                setProgressBar((5 + (95 * progress)).toFixed(1), index);
+            }
+        };
+
+        ffmpeg.on('progress', onProgress);
+
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
             '-c:v', 'libx264',
@@ -365,6 +359,8 @@ fileInput.addEventListener('change', async () => {
             '-b:a', audioBitrate.toString(),
             outputFileName
         ], -1, {signal: abort.signal}));
+
+        ffmpeg.off('progress', onProgress);
 
         console.log('FFMpeg:', ffmpegStatus);
 
