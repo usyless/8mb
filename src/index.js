@@ -527,6 +527,7 @@ const showSettings = () => {
             const elem = set.querySelector(`#${setting}`);
             if (elem) {
                 const def = settingDefinitions[setting];
+                // no need to validate here as validated in get settings
                 currSet[setting] = def.setter(elem[def.getter]);
             }
         }
