@@ -223,7 +223,14 @@ fileInput.addEventListener('change', async () => {
 
         setProgressBar(4, index);
 
-        const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info], -1, {signal: abort.signal}));
+        const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe([
+            '-v', 'error', '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height',
+            '-show_entries', 'format=duration',
+            '-of', 'default=noprint_wrappers=1:nokey=1',
+            inputFileName,
+            '-o', output_info
+        ], -1, {signal: abort.signal}));
 
         console.log('FFProbe:', ffprobeStatus);
 
@@ -238,22 +245,35 @@ fileInput.addEventListener('change', async () => {
             continue;
         }
 
-        const [durationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8", {signal: abort.signal}));
+        const [dimensionsAndDurationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8", {signal: abort.signal}));
+
+        console.log('Video stats:', dimensionsAndDurationResult);
 
         if (allCancelled) break;
         else if (currentCancelled) continue;
 
-        if ((durationResult.status !== "fulfilled")) {
-            console.error('Failed to read video duration file with error:', durationResult.reason);
-            await createPopup(`Failed to read video duration file with error: ${durationResult.reason}`);
+        if ((dimensionsAndDurationResult.status !== "fulfilled")) {
+            console.error('Failed to read video duration file with error:', dimensionsAndDurationResult.reason);
+            await createPopup(`Failed to read video duration file with error: ${dimensionsAndDurationResult.reason}`);
             continue;
         }
 
-        const duration = Number(durationResult.value);
+        const [width, height, duration] = (() => {
+            const parts = dimensionsAndDurationResult.value.split('\n');
+            if (parts.length !== 4) {
+                return [undefined, undefined, undefined];
+            }
 
-        if (Number.isNaN(duration) || duration <= 0) {
-            console.error(`Failed to get duration of video ${inputFileName}!`);
-            await createPopup(`Failed to get duration of video ${originalInputFileName}!`);
+            return [Number(parts[0]), Number(parts[1]), Number(parts[2])];
+        })();
+
+        console.log(`Width: ${width}, Height: ${height}, Duration: ${duration}`);
+
+        if (width == null || height == null || duration == null ||
+            Number.isNaN(width) || Number.isNaN(height) || Number.isNaN(duration) ||
+            width <= 0 || height <= 0 || duration <= 0) {
+            console.error(`Failed to get width/height/duration of video ${inputFileName}!`);
+            await createPopup(`Failed to get width/height/duration of video ${originalInputFileName}!`);
             continue;
         }
 
