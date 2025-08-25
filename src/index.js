@@ -98,6 +98,7 @@ const ProgressBar = document.getElementById('progress').firstElementChild;
 
 fileInput.addEventListener('change', async () => {
     const files = fileInput.files;
+    fileInput.value = ''; // reset so same file again still works
     fileInput.disabled = true;
 
     let currentCancelled = false;
