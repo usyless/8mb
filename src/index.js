@@ -42,7 +42,7 @@ const getFFmpeg = (() => {
                     coreURL: await toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript'),
                     wasmURL: await toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm')
                 }
-                if (window.crossOriginIsolated) {
+                if (baseURL === 'ffmpeg-mt/') {
                     console.log('Using multi threaded mode');
                     loadData.workerURL = await toBlobURL(baseURL + 'ffmpeg-core.worker.js', 'text/javascript');
                 } else {
