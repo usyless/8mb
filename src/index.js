@@ -18,6 +18,8 @@ const toBlobURL = async (url, mimeType) => {
 }
 
 const localStorageSettingsName = '8mb-settings';
+const ffmpegSingleBase = 'ffmpeg/';
+const ffmpegMTBase = 'ffmpeg-mt/';
 
 let onProgress;
 
@@ -39,12 +41,12 @@ const getFFmpeg = (() => {
     return async (forceSingleThreaded, signal) => {
         if (!ffmpeg.loaded) {
             try {
-                const baseURL = (forceSingleThreaded || !window.crossOriginIsolated) ? 'ffmpeg/' : 'ffmpeg-mt/';
+                const baseURL = (forceSingleThreaded || !window.crossOriginIsolated) ? ffmpegSingleBase : ffmpegMTBase;
                 const loadData = {
                     coreURL: await toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript'),
                     wasmURL: await toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm')
                 }
-                if (baseURL === 'ffmpeg-mt/') {
+                if (baseURL === ffmpegMTBase) {
                     console.log('Using multi threaded mode');
                     loadData.workerURL = await toBlobURL(baseURL + 'ffmpeg-core.worker.js', 'text/javascript');
                 } else {
