@@ -329,7 +329,7 @@ fileInput.addEventListener('change', async () => {
 
         onProgress = (progress, time) => {
             console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
-            if (progress <= 100 && progress >= 0) {
+            if (progress <= 1 && progress >= 0) {
                 setProgressBar((5 + (95 * progress)).toFixed(1), index);
             }
         };
