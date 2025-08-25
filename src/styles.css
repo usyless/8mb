@@ -218,6 +218,10 @@ p {
         overflow: hidden;
     }
 
+    > :first-child.animate::before {
+        animation: moveRight 2.5s infinite linear;
+    }
+
     > :first-child::before {
         content: "";
         position: absolute;
@@ -228,10 +232,6 @@ p {
         bottom: 0;
         z-index: -1;
         background: url("./assets/progress.svg") repeat-x left top;
-
-        &.animate {
-            animation: moveRight 2.5s infinite linear;
-        }
     }
 
     > :last-child {
