@@ -68,7 +68,8 @@ const codecOverheadMultiplier = 0.9;
 const maxAudioSizeMultiplier = 0.1;
 const ifNeededMaxAudioSizeMultiplier = 0.3;
 
-const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
+// no veryfast as it seems to be broken
+const ffmpeg_presets = ['ultrafast', 'superfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 const auto_audio_bitrates = [128 * 1000, 96 * 1000, 64 * 1000]; // bits
 const if_really_needed_audio_bitrates = [32 * 1000, 16 * 1000, 8 * 1000];
 
@@ -481,7 +482,7 @@ const getSettings = () => {
     }
 
     if (typeof set.ffmpegPreset !== 'string') {
-        set.ffmpegPreset = "ultrafast";
+        set.ffmpegPreset = "faster";
     }
 
     const defaultVideoSizes = ["8", "10", "25", "50"];
