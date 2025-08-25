@@ -79,6 +79,7 @@ fileInput.addEventListener('change', async () => {
         ProgressBar.nextElementSibling.textContent = `${prog}% (Video ${videoIndex}/${totalVideos})`;
     }
 
+    ProgressBar.classList.add('animate');
     setProgressBar(0, 1);
 
     const settings = getSettings();
@@ -330,6 +331,7 @@ fileInput.addEventListener('change', async () => {
     cancelSpinner();
     setDefaultText();
     disableCancel();
+    ProgressBar.classList.remove('animate');
 
     // always terminate at the end
     ffmpeg.terminate();
