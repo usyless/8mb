@@ -326,3 +326,18 @@ input[type="text"] {
         width: auto;
     }
 }
+
+[data-edge] {
+    border: solid var(--text-primary) 1px;
+    padding: var(--spacing-larger);
+    border-radius: var(--radius-larger);
+    margin-bottom: 15px;
+
+    > :first-child {
+        margin-top: 0;
+    }
+
+    > :last-child {
+        margin-bottom: 0;
+    }
+}
