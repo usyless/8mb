@@ -357,6 +357,7 @@ fileInput.addEventListener('change', async () => {
             console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
 
             if (dimensions.length > 0) {
+                console.log(`Trying to run command again for ${inputFileName} without dimensions limit`);
                 // try again with no limit
                 const [ffmpegStatus] = await runAsync(ffmpeg.exec([
                     '-i', inputFileName,
