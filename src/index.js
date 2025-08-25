@@ -320,6 +320,7 @@ fileInput.addEventListener('change', async () => {
         }
 
         const videoBitrate = Math.floor((targetSize - audioSize) / duration); // bps
+        const preset = settings.ffmpegPreset;
 
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
 
@@ -351,7 +352,7 @@ fileInput.addEventListener('change', async () => {
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
             '-c:v', 'libx264',
-            '-preset', settings.ffmpegPreset,
+            '-preset', preset,
             ...dimensions,
             '-b:v', videoBitrate.toString(),
             '-maxrate', videoBitrate.toString(),
