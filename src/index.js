@@ -190,7 +190,7 @@ fileInput.addEventListener('change', async () => {
             const res = await createPopup(`File ${originalInputFileName} is already under the desired size!`, {
                 buttons: ['Process Anyway', 'Skip']
             });
-            if (res === 'Skip') {
+            if (res === 'Skip' || res === false) {
                 console.log(`File ${inputFileName} is already under desired size!`);
                 continue;
             }
