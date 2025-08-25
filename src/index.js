@@ -4,9 +4,18 @@ import {createPopup} from "./popups.js";
 
 const {FFmpeg} = /** @type {typeof import('@ffmpeg/ffmpeg')} */ FFmpegWASM;
 
-const toBlobURL = async (url, mimeType) => URL.createObjectURL(
-    new Blob([await (await fetch(url)).arrayBuffer()], {type: mimeType})
-);
+const blobURLCache = new Map();
+const toBlobURL = async (url, mimeType) => {
+    let cached = blobURLCache.get(url);
+    if (!cached) {
+        const r = await fetch(url);
+        const buffer = await r.arrayBuffer();
+        const blob = new Blob([buffer], {type: mimeType});
+        cached = URL.createObjectURL(blob);
+        blobURLCache.set(url, cached);
+    }
+    return cached;
+}
 
 let onProgress;
 
