@@ -208,8 +208,18 @@ p {
         position: absolute;
         height: 100%;
         transition: width 0.1s ease-in-out !important;
-        background-color: var(--progress);
         width: 0;
+        overflow: hidden;
+    }
+
+    > :first-child::before {
+        content: "";
+        position: absolute;
+        width: 1000px;
+        height: 100%;
+        inset: 0;
+        z-index: -1;
+        background: url("./assets/progress.svg") repeat-x left top;
     }
 
     > :last-child {

@@ -1,4 +1,4 @@
-const cacheName = 'v4';
+const cacheName = 'v5';
 
 contentToCache = [
     './favicon.ico',
@@ -25,6 +25,7 @@ contentToCache = [
 
     './assets/fonts/open-sans-latin-400-normal.woff2',
     './assets/fonts/open-sans-latin-700-normal.woff2',
+    './assets/progress.svg'
 ].map((c) => `${c}?version=${cacheName}`);
 
 self.addEventListener('install', (e) => {
