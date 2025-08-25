@@ -194,6 +194,12 @@ p {
     color: var(--text-primary-lower-opacity) ;
 }
 
+@keyframes moveRight {
+    to {
+        transform: translateX(120px);
+    }
+}
+
 #progress {
     border-radius: var(--radius);
     display: flex;
@@ -215,11 +221,17 @@ p {
     > :first-child::before {
         content: "";
         position: absolute;
-        width: 1000px;
+        width: calc(100% + 120px);
         height: 100%;
-        inset: 0;
+        top: 0;
+        left: -120px;
+        bottom: 0;
         z-index: -1;
         background: url("./assets/progress.svg") repeat-x left top;
+
+        &.animate {
+            animation: moveRight 2.5s infinite linear;
+        }
     }
 
     > :last-child {
