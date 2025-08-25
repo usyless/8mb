@@ -21,7 +21,7 @@ const getFFmpeg = (() => {
         onProgress?.(progress, time);
     });
 
-    return async (forceSingleThreaded) => {
+    return async (forceSingleThreaded, signal) => {
         if (!ffmpeg.loaded) {
             try {
                 const baseURL = (forceSingleThreaded || !window.crossOriginIsolated) ? 'ffmpeg/' : 'ffmpeg-mt/';
@@ -36,11 +36,19 @@ const getFFmpeg = (() => {
                     console.log('Using single threaded mode');
                 }
                 console.log('Loading ffmpeg with data:', loadData);
-                await ffmpeg.load(loadData);
+                if (signal) {
+                    await ffmpeg.load(loadData, {signal});
+                } else {
+                    await ffmpeg.load(loadData);
+                }
                 console.log('Loaded ffmpeg');
             } catch (error) {
                 console.error(error);
-                throw error;
+                if (signal.aborted) {
+                    return ffmpeg;
+                } else {
+                    throw error;
+                }
             }
         }
         return ffmpeg;
@@ -91,34 +99,54 @@ fileInput.addEventListener('change', async () => {
         // always terminate ffmpeg
         ffmpeg?.terminate();
 
-        setProgressBar(0, 1);
+        setProgressBar(1, 1);
+
+        const originalInputFileName = file.name;
+        let inputFileName = file.name;
+
+        const abort = new AbortController();
+
+        currentCancelled = false;
+
+        cancelCurrent = () => {
+            console.log(`Cancelling ${inputFileName}`);
+            currentCancelled = true;
+            abort.abort();
+        }
+
+        cancelAll = () => {
+            console.log(`Cancelling all of ${files}`);
+            allCancelled = true;
+            abort.abort();
+        }
+
+        enableCancel();
 
         try {
-            ffmpeg = await getFFmpeg(settings.forceSingleThreaded);
+            ffmpeg = await getFFmpeg(settings.forceSingleThreaded, abort.signal);
+
+            if (allCancelled) break;
+            else if (currentCancelled) continue;
         } catch (e) {
             console.error('Error loading ffmpeg:', e);
             fileInput.disabled = false;
+            setProgressBar(0, 1);
             cancelSpinner();
             setDefaultText();
             disableCancel();
+            ProgressBar.classList.remove('animate');
             onProgress = null;
-            void createPopup('Failed to load FFmpeg: The page will now refresh\nCheck the console for more logs').then(() => {
-                window.location.reload();
-            });
+            await createPopup('Failed to load FFmpeg, maybe try again in single threaded mode?');
+            break;
         }
-        currentCancelled = false;
         ++index;
         onProgress = null;
-
-        const originalInputFileName = file.name;
 
         if (!file.type.startsWith('video/')) {
             console.log(`File ${originalInputFileName} is not a video file!`);
             await createPopup(`File ${originalInputFileName} is not a video file!`);
             continue;
         }
-
-        let inputFileName = file.name;
 
         const [inputFileNameNoExtension, inputFileExtension] = (() => {
             let fileName;
@@ -168,30 +196,14 @@ fileInput.addEventListener('change', async () => {
 
         console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
 
-        setProgressBar(1, index);
-
-        const abort = new AbortController();
-
-        cancelCurrent = () => {
-            console.log(`Cancelling ${inputFileName}`);
-            currentCancelled = true;
-            abort.abort();
-        }
-
-        cancelAll = () => {
-            console.log(`Cancelling all of ${files}`);
-            allCancelled = true;
-            abort.abort();
-        }
-
-        enableCancel();
+        setProgressBar(2, index);
 
         const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer()), {signal: abort.signal}));
 
         if (allCancelled) break;
         else if (currentCancelled) continue;
 
-        setProgressBar(2, index);
+        setProgressBar(3, index);
 
         if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
             console.error(`Error writing file ${inputFileName}:`, wroteFile.reason);
@@ -205,7 +217,7 @@ fileInput.addEventListener('change', async () => {
             output_info = 'output_not_today.txt';
         }
 
-        setProgressBar(3, index);
+        setProgressBar(4, index);
 
         const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe(['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', inputFileName, '-o', output_info], -1, {signal: abort.signal}));
 
