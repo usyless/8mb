@@ -103,7 +103,7 @@ fileInput.addEventListener('change', async () => {
         // always terminate ffmpeg
         ffmpeg?.terminate();
 
-        setProgressBar(1, 1);
+        setProgressBar(1, index);
 
         const originalInputFileName = file.name;
         let inputFileName = file.name;
@@ -134,7 +134,7 @@ fileInput.addEventListener('change', async () => {
         } catch (e) {
             console.error('Error loading ffmpeg:', e);
             fileInput.disabled = false;
-            setProgressBar(0, 1);
+            setProgressBar(0, index);
             cancelSpinner();
             setDefaultText();
             disableCancel();
