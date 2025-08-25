@@ -310,7 +310,9 @@ fileInput.addEventListener('change', async () => {
 
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
 
-        const dimensions = ['-vf', `scale='if(gt(a,1),${settings.customMaxWidth || 1280},-1)':'if(gt(a,1),-1,${settings.customMaxHeight || 1280})'`];
+        let dimensions = (settings.disableDimensionLimit)
+            ? []
+            : ['-vf', "scale='if(gt(a,1),1280,-1)':'if(gt(a,1),-1,1280)'"];
 
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
@@ -377,8 +379,7 @@ const showSettings = () => {
     set.querySelector('#targetFileSize').value = currSet.targetFileSize;
     set.querySelector('#customAudioBitrate').value = currSet.customAudioBitrate;
     set.querySelector('#ffmpegPreset').value = currSet.ffmpegPreset;
-    set.querySelector('#customMaxWidth').value = currSet.customMaxWidth;
-    set.querySelector('#customMaxHeight').value = currSet.customMaxHeight;
+    set.querySelector('#disableDimensionLimit').checked = currSet.disableDimensionLimit;
 
     set.serialise = () => {
         const set = document.getElementById('settingsMenu');
@@ -388,8 +389,7 @@ const showSettings = () => {
             targetFileSize: +set.querySelector('#targetFileSize').value,
             customAudioBitrate: +set.querySelector('#customAudioBitrate').value,
             ffmpegPreset: set.querySelector('#ffmpegPreset').value,
-            customMaxWidth: set.querySelector('#customMaxWidth').value,
-            customMaxHeight: set.querySelector('#customMaxHeight').value
+            disableDimensionLimit: set.querySelector('#disableDimensionLimit').checked
         };
     }
     createPopup(set, {buttons: 'Save Settings'}).then((value) => {
@@ -429,12 +429,8 @@ const getSettings = () => {
         set.defaultVideoSize = "8";
     }
 
-    if (typeof set.customMaxWidth !== 'number' || set.customMaxWidth < 0 || Number.isNaN(set.customMaxWidth)) {
-        set.customMaxWidth = 0;
-    }
-
-    if (typeof set.customMaxHeight !== 'number' || set.customMaxHeight < 0 || Number.isNaN(set.customMaxHeight)) {
-        set.customMaxHeight = 0;
+    if (typeof set.disableDimensionLimit !== 'boolean') {
+        set.disableDimensionLimit = false;
     }
 
     return set;
