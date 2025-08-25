@@ -98,7 +98,6 @@ const ProgressBar = document.getElementById('progress').firstElementChild;
 
 fileInput.addEventListener('change', async () => {
     const files = fileInput.files;
-    fileInput.value = ''; // reset so same file again still works
     fileInput.disabled = true;
 
     let currentCancelled = false;
@@ -436,6 +435,8 @@ fileInput.addEventListener('change', async () => {
     setDefaultText();
     disableCancel();
     ProgressBar.classList.remove('animate');
+
+    fileInput.value = ''; // reset so same file again still works
 
     // always terminate at the end
     ffmpeg.terminate();
