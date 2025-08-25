@@ -334,10 +334,6 @@ fileInput.addEventListener('change', async () => {
             }
         };
 
-        const preset = ffmpeg_presets.includes(settings.ffmpegPreset)
-            ? (settings.ffmpegPreset)
-            : (ffmpeg_presets[0]);
-
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
 
         const dimensions = [];
@@ -359,7 +355,7 @@ fileInput.addEventListener('change', async () => {
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
             '-c:v', 'libx264',
-            '-preset', preset,
+            '-preset', settings.ffmpegPreset,
             ...dimensions,
             '-b:v', videoBitrate.toString(),
             '-maxrate', videoBitrate.toString(),
@@ -491,7 +487,7 @@ const getSettings = () => {
         set.customAudioBitrate = 0;
     }
 
-    if (typeof set.ffmpegPreset !== 'string') {
+    if (!ffmpeg_presets.includes(set.ffmpegPreset)) {
         set.ffmpegPreset = "faster";
     }
 
