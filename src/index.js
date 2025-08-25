@@ -310,11 +310,13 @@ fileInput.addEventListener('change', async () => {
 
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
 
+        const dimensions = (settings.disableDimensionLimit) ? [] : ['-vf', "scale='if(gt(a,1),1280,-1)':'if(gt(a,1),-1,1280)'"];
+
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
             '-c:v', 'libx264',
             '-preset', preset,
-            '-vf', "scale='if(gt(a,1),1280,-1)':'if(gt(a,1),-1,1280)'",
+            ...dimensions,
             '-b:v', videoBitrate.toString(),
             '-maxrate', videoBitrate.toString(),
             '-c:a', 'aac',
@@ -375,6 +377,7 @@ const showSettings = () => {
     set.querySelector('#targetFileSize').value = currSet.targetFileSize;
     set.querySelector('#customAudioBitrate').value = currSet.customAudioBitrate;
     set.querySelector('#ffmpegPreset').value = currSet.ffmpegPreset;
+    set.querySelector('#disableDimensionLimit').checked = currSet.disableDimensionLimit;
 
     set.serialise = () => {
         const set = document.getElementById('settingsMenu');
@@ -383,7 +386,8 @@ const showSettings = () => {
             forceSingleThreaded: set.querySelector('#forceSingleThreaded').checked,
             targetFileSize: +set.querySelector('#targetFileSize').value,
             customAudioBitrate: +set.querySelector('#customAudioBitrate').value,
-            ffmpegPreset: set.querySelector('#ffmpegPreset').value
+            ffmpegPreset: set.querySelector('#ffmpegPreset').value,
+            disableDimensionLimit: set.querySelector('#disableDimensionLimit').checked
         };
     }
     createPopup(set, {buttons: 'Save Settings'}).then((value) => {
@@ -421,6 +425,10 @@ const getSettings = () => {
     const defaultVideoSizes = ["8", "10", "25", "50"];
     if (!defaultVideoSizes.includes(set.defaultVideoSize)) {
         set.defaultVideoSize = "8";
+    }
+
+    if (typeof set.disableDimensionLimit !== 'boolean') {
+        set.disableDimensionLimit = false;
     }
 
     return set;
