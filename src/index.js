@@ -158,12 +158,6 @@ fileInput.addEventListener('change', async () => {
             else if (currentCancelled) continue;
         } catch (e) {
             console.error('Error loading ffmpeg:', e);
-            fileInput.disabled = false;
-            setProgressBar(0, index);
-            cancelSpinner();
-            setDefaultText();
-            disableCancel();
-            ProgressBar.classList.remove('animate');
             onProgress = null;
             await createPopup('Failed to load FFmpeg, maybe try again in single threaded mode?');
             break;
