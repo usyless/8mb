@@ -224,8 +224,7 @@ fileInput.addEventListener('change', async () => {
         setProgressBar(4, index);
 
         const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe([
-            '-v', 'error', '-select_streams', 'v:0',
-            '-show_entries', 'stream=width,height',
+            '-v', 'error',
             '-show_entries', 'format=duration',
             '-of', 'default=noprint_wrappers=1:nokey=1',
             inputFileName,
@@ -245,35 +244,26 @@ fileInput.addEventListener('change', async () => {
             continue;
         }
 
-        const [dimensionsAndDurationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8", {signal: abort.signal}));
+        const [durationResult] = await runAsync(ffmpeg.readFile(output_info, "utf8", {signal: abort.signal}));
 
-        console.log('Video stats:', dimensionsAndDurationResult);
+        console.log('Video stats:', durationResult);
 
         if (allCancelled) break;
         else if (currentCancelled) continue;
 
-        if ((dimensionsAndDurationResult.status !== "fulfilled")) {
-            console.error('Failed to read video duration file with error:', dimensionsAndDurationResult.reason);
-            await createPopup(`Failed to read video duration file with error: ${dimensionsAndDurationResult.reason}`);
+        if ((durationResult.status !== "fulfilled")) {
+            console.error('Failed to read video duration file with error:', durationResult.reason);
+            await createPopup(`Failed to read video duration file with error: ${durationResult.reason}`);
             continue;
         }
 
-        const [width, height, duration] = (() => {
-            const parts = dimensionsAndDurationResult.value.split('\n');
-            if (parts.length !== 4) {
-                return [undefined, undefined, undefined];
-            }
+        const duration = Number(durationResult.value);
 
-            return [Number(parts[0]), Number(parts[1]), Number(parts[2])];
-        })();
+        console.log(`Duration: ${duration}`);
 
-        console.log(`Width: ${width}, Height: ${height}, Duration: ${duration}`);
-
-        if (width == null || height == null || duration == null ||
-            Number.isNaN(width) || Number.isNaN(height) || Number.isNaN(duration) ||
-            width <= 0 || height <= 0 || duration <= 0) {
-            console.error(`Failed to get width/height/duration of video ${inputFileName}!`);
-            await createPopup(`Failed to get width/height/duration of video ${originalInputFileName}!`);
+        if (duration == null || Number.isNaN(duration) || duration <= 0) {
+            console.error(`Failed to get duration of video ${inputFileName}!`);
+            await createPopup(`Failed to get duration of video ${originalInputFileName}!`);
             continue;
         }
 
@@ -324,6 +314,7 @@ fileInput.addEventListener('change', async () => {
             '-i', inputFileName,
             '-c:v', 'libx264',
             '-preset', preset,
+            '-vf', "scale='if(gt(a,1),1280,-1)':'if(gt(a,1),-1,1280)'",
             '-b:v', videoBitrate.toString(),
             '-maxrate', videoBitrate.toString(),
             '-c:a', 'aac',
