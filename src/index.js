@@ -605,6 +605,11 @@ requestAnimationFrame(() => {
     startSpinner();
     cancelSpinner();
 });
+setTimeout(() => {
+    resizeSpinner();
+    startSpinner();
+    cancelSpinner();
+}, 50);
 
 window.addEventListener('resize', resizeSpinner, {passive: true});
 
