@@ -379,11 +379,11 @@ const showSettings = () => {
     set.serialise = () => {
         const set = document.getElementById('settingsMenu');
         return {
+            ...getSettings(),
             forceSingleThreaded: set.querySelector('#forceSingleThreaded').checked,
             targetFileSize: +set.querySelector('#targetFileSize').value,
             customAudioBitrate: +set.querySelector('#customAudioBitrate').value,
-            ffmpegPreset: set.querySelector('#ffmpegPreset').value,
-            defaultVideoSize: document.getElementById('defaultVideoSize').value
+            ffmpegPreset: set.querySelector('#ffmpegPreset').value
         };
     }
     createPopup(set, {buttons: 'Save Settings'}).then((value) => {
