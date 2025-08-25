@@ -20,6 +20,7 @@ const toBlobURL = async (url, mimeType) => {
 const localStorageSettingsName = '8mb-settings';
 const ffmpegSingleBase = 'ffmpeg/';
 const ffmpegMTBase = 'ffmpeg-mt/';
+let baseURL;
 
 if (navigator.userAgent.includes('Edg/')) {
     for (const elem of document.querySelectorAll('[data-edge]')) elem.classList.remove('hidden');
@@ -35,7 +36,7 @@ const getFFmpeg = (() => {
     return async (forceSingleThreaded, signal) => {
         if (!ffmpeg.loaded) {
             try {
-                const baseURL = (forceSingleThreaded || !window.crossOriginIsolated) ? ffmpegSingleBase : ffmpegMTBase;
+                baseURL = (forceSingleThreaded || !window.crossOriginIsolated) ? ffmpegSingleBase : ffmpegMTBase;
                 const loadData = {
                     coreURL: await toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript'),
                     wasmURL: await toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm')
@@ -121,8 +122,8 @@ fileInput.addEventListener('change', async () => {
 
     let ffmpeg;
 
-    let index = 0;
-    for (const file of files) {
+    for (let index = 1; index <= files.length; ++index) {
+        const file = files[index - 1];
         // always terminate ffmpeg
         ffmpeg?.terminate();
 
@@ -159,7 +160,6 @@ fileInput.addEventListener('change', async () => {
             await createPopup('Failed to load FFmpeg, maybe try again in single threaded mode?');
             break;
         }
-        ++index;
 
         if (!file.type.startsWith('video/')) {
             console.log(`File ${originalInputFileName} is not a video file!`);
@@ -349,6 +349,35 @@ fileInput.addEventListener('change', async () => {
 
         ffmpeg.on('progress', onProgress);
 
+        let disableMT = false;
+
+        if (baseURL === ffmpegMTBase) {
+            // check if MT is broken, if so reload in single threaded
+            void (async (timeout) => {
+                let progressFired = false;
+                const onProgress = () => {
+                    progressFired = true
+                    stopListen();
+                }
+                const stopListen = () => ffmpeg.off('progress', onProgress);
+                ffmpeg.on('progress', onProgress);
+
+                await new Promise((resolve) => setTimeout(resolve, timeout));
+
+                if (!abort.signal.aborted && !progressFired) {
+                    const res = await createPopup(
+                        'Video processing seems to be stuck...\nIf not in firefox -> I advise switching to single threaded',
+                        {buttons: ['Single Threaded', 'Proceed Anyway']}
+                    );
+                    if (res === 'Single Threaded') {
+                        disableMT = true;
+                        abort.abort();
+                    }
+                }
+                stopListen();
+            })(10000);
+        }
+
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
             '-c:v', 'libx264',
@@ -364,6 +393,12 @@ fileInput.addEventListener('change', async () => {
         ffmpeg.off('progress', onProgress);
 
         console.log('FFMpeg:', ffmpegStatus);
+
+        if (disableMT) {
+            --index;
+            settings.forceSingleThreaded = true;
+            continue;
+        }
 
         if (allCancelled) break;
         else if (currentCancelled) continue;
