@@ -10,6 +10,10 @@ const toBlobURL = async (url, mimeType) => URL.createObjectURL(
 
 let onProgress;
 
+if (navigator.userAgent.includes('Edg/')) {
+    for (const elem of document.querySelectorAll('[data-edge]')) elem.classList.remove('hidden');
+}
+
 const getFFmpeg = (() => {
     const ffmpeg = new FFmpeg();
 
