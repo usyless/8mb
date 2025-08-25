@@ -48,7 +48,7 @@ const getFFmpeg = (() => {
                 console.log('Loaded ffmpeg');
             } catch (error) {
                 console.error(error);
-                if (signal.aborted) {
+                if (signal?.aborted) {
                     return ffmpeg;
                 } else {
                     throw error;
