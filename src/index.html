@@ -33,6 +33,7 @@
         </h3>
         <p>It may be slow but it's all done on your device, no data ever leaves it</p>
         <p>Not working? Turn on "Force single threaded mode" in the settings!</p>
+        <p>Remember to check your settings in case of errors</p>
         <div data-edge class="hidden">
             <p>Using edge? Performance will be INCREDIBLY slow... try disabling "Enhanced Security" for this site</p>
             <p>This is found under the (i) icon on the left of the address bar</p>
@@ -94,9 +95,12 @@
             </select>
         </div>
         <div>
-            <label for="disableDimensionLimit">Disable 1280x1280 video dimension limit (default off)</label>
-            <label>(not recommended to turn on)</label>
-            <input type="checkbox" id="disableDimensionLimit">
+            <label for="customMaxWidth">Custom max video width (0 for default, which is 1280 pixels)</label>
+            <input type="number" id="customMaxWidth" min="0">
+        </div>
+        <div>
+            <label for="customMaxHeight">Custom max video height (0 for default, which is 1280 pixels)</label>
+            <input type="number" id="customMaxHeight" min="0">
         </div>
     </div>
 </template>
