@@ -70,13 +70,13 @@ const maxAudioSizeMultiplier = 0.5;
 const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000, 8 * 1000]; // bits
 
+// take into account fps too
 const bitrateToMaxDimensions = {
-    [(1 * 1000 * 1000 * 8)]: 426, // gives 240p
-    [(2 * 1000 * 1000 * 8)]: 640, // gives 360p
-    [(4 * 1000 * 1000 * 8)]: 854, // gives 480p
-    [(8 * 1000 * 1000 * 8)]: 1280, // gives 720p
-    [(15 * 1000 * 1000 * 8)]: 1920, // gives 1080p
-    [(30 * 1000 * 1000 * 8)]: 2560 // gives 1440p
+    [(2 * 1000 * 1000)]: 640, // gives 360p
+    [(4 * 1000 * 1000)]: 854, // gives 480p
+    [(8 * 1000 * 1000)]: 1280, // gives 720p
+    [(15 * 1000 * 1000)]: 1920, // gives 1080p
+    [(30 * 1000 * 1000)]: 2560 // gives 1440p
     // otherwise none i guess
 }
 
