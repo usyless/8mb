@@ -70,6 +70,16 @@ const maxAudioSizeMultiplier = 0.5;
 const ffmpeg_presets = ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 const auto_audio_bitrates = [128 * 1000, 64 * 1000, 32 * 1000, 16 * 1000, 8 * 1000]; // bits
 
+const bitrateToMaxDimensions = {
+    [(1 * 1000 * 1000 * 8)]: 426, // gives 240p
+    [(2 * 1000 * 1000 * 8)]: 640, // gives 360p
+    [(4 * 1000 * 1000 * 8)]: 854, // gives 480p
+    [(8 * 1000 * 1000 * 8)]: 1280, // gives 720p
+    [(15 * 1000 * 1000 * 8)]: 1920, // gives 1080p
+    [(30 * 1000 * 1000 * 8)]: 2560 // gives 1440p
+    // otherwise none i guess
+}
+
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
 const ProgressBar = document.getElementById('progress').firstElementChild;
@@ -310,9 +320,21 @@ fileInput.addEventListener('change', async () => {
 
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
 
-        let dimensions = (settings.disableDimensionLimit)
-            ? []
-            : ['-vf', "scale='if(gt(a,1),min(iw\\,1280),-1)':'if(gt(a,1),-1,min(ih\\,1280))'"];
+        let dimensions = [];
+
+        if (!settings.disableDimensionLimit) {
+            for (const bitrate in bitrateToMaxDimensions) {
+                if (videoBitrate <= +bitrate) {
+                    const size = bitrateToMaxDimensions[bitrate];
+                    dimensions.push('-vf');
+                    dimensions.push(`scale='if(gt(a,1),min(iw\\,${size}),-1)':'if(gt(a,1),-1,min(ih\\,${size}))'`);
+                    break;
+                }
+            }
+            // if it hasn't been assigned one it means bitrate is high enough to not care
+        }
+
+        console.log(`Setting dimensions:`, dimensions);
 
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
