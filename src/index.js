@@ -325,13 +325,13 @@ fileInput.addEventListener('change', async () => {
             }
         };
 
-        let preset = ffmpeg_presets.includes(settings.ffmpegPreset)
+        const preset = ffmpeg_presets.includes(settings.ffmpegPreset)
             ? (settings.ffmpegPreset)
             : (ffmpeg_presets[0]);
 
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
 
-        let dimensions = [];
+        const dimensions = [];
 
         if (!settings.disableDimensionLimit) {
             for (const bitrate in bitrateToMaxDimensions) {
