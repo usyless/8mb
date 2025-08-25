@@ -219,7 +219,7 @@ p {
     }
 
     > :first-child.animate::before {
-        animation: moveRight 2.5s infinite linear;
+        animation: moveRight 4s infinite linear;
     }
 
     > :first-child::before {
