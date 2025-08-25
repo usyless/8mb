@@ -49,6 +49,7 @@ const getFFmpeg = (() => {
                     console.log('Using single threaded mode');
                 }
                 console.log('Loading ffmpeg with data:', loadData);
+                console.log('Blob cache:', blobURLCache);
                 if (signal) {
                     await ffmpeg.load(loadData, {signal});
                 } else {
