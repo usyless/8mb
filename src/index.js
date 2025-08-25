@@ -312,7 +312,7 @@ fileInput.addEventListener('change', async () => {
 
         let dimensions = (settings.disableDimensionLimit)
             ? []
-            : ['-vf', "scale='if(gt(a,1),1280,-1)':'if(gt(a,1),-1,1280)'"];
+            : ['-vf', "scale='if(gt(a,1),min(iw\\,1280),-1)':'if(gt(a,1),-1,min(ih\\,1280))'"];
 
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
