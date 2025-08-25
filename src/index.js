@@ -17,6 +17,8 @@ const toBlobURL = async (url, mimeType) => {
     return cached;
 }
 
+const localStorageSettingsName = '8mb-settings';
+
 let onProgress;
 
 if (navigator.userAgent.includes('Edg/')) {
@@ -467,7 +469,7 @@ const showSettings = () => {
     }
     createPopup(set, {buttons: 'Save Settings'}).then((value) => {
         if (typeof value === 'object') {
-            localStorage.setItem('settings', JSON.stringify(value));
+            localStorage.setItem(localStorageSettingsName, JSON.stringify(value));
             updateDefaultVideoSize();
         }
     });
@@ -475,7 +477,7 @@ const showSettings = () => {
 document.getElementById('settings').addEventListener('click', showSettings);
 
 const getSettings = () => {
-    let set = JSON.parse(localStorage.getItem('settings')) || {};
+    let set = JSON.parse(localStorage.getItem(localStorageSettingsName)) || {};
 
     if (typeof set !== 'object') {
         set = {};
@@ -511,7 +513,7 @@ const getSettings = () => {
 
 const defaultVideoSizeElem = document.getElementById('defaultVideoSize');
 defaultVideoSizeElem.addEventListener('change', (e) => {
-    localStorage.setItem('settings', JSON.stringify({...getSettings(), defaultVideoSize: e.currentTarget.value}));
+    localStorage.setItem(localStorageSettingsName, JSON.stringify({...getSettings(), defaultVideoSize: e.currentTarget.value}));
 });
 
 const updateDefaultVideoSize = () => {
