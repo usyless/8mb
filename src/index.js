@@ -91,6 +91,8 @@ fileInput.addEventListener('change', async () => {
         // always terminate ffmpeg
         ffmpeg?.terminate();
 
+        setProgressBar(0, 1);
+
         try {
             ffmpeg = await getFFmpeg(settings.forceSingleThreaded);
         } catch (e) {
