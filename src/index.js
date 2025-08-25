@@ -78,6 +78,8 @@ let cancelAll;
 
 const runAsync = (...args) => Promise.allSettled(args);
 
+const defaultVideoSizes = ["8", "10", "25", "50"];
+
 const codecOverheadMultiplier = 0.9;
 const maxAudioSizeMultiplier = 0.1;
 const ifNeededMaxAudioSizeMultiplier = 0.3;
@@ -437,27 +439,66 @@ fileInput.addEventListener('change', async () => {
     ffmpeg.terminate();
 });
 
+const settingDefinitions = {
+    forceSingleThreaded: {
+        default: false,
+        isValid: (value) => typeof value === 'boolean',
+        getter: 'checked',
+        setter: (value) => value
+    },
+    targetFileSize: {
+        default: 0,
+        isValid: (value) => typeof value === 'number' && value >= 0 && !(Number.isNaN(value)),
+        getter: 'value',
+        setter: (value) => +value
+    },
+    customAudioBitrate: {
+        default: 0,
+        isValid: (value) => typeof value === 'number' && value >= 0 && !(Number.isNaN(value)),
+        getter: 'value',
+        setter: (value) => +value
+    },
+    ffmpegPreset: {
+        default: 'faster',
+        isValid: (value) => ffmpeg_presets.includes(value),
+        getter: 'value',
+        setter: (value) => value
+    },
+    defaultVideoSize: {
+        default: "8",
+        isValid: (value) => defaultVideoSizes.includes(value),
+        getter: 'value',
+        setter: (value) => value
+    },
+    disableDimensionLimit: {
+        default: false,
+        isValid: (value) => typeof value === 'boolean',
+        getter: 'checked',
+        setter: (value) => value
+    },
+}
+
 const settingsTemplate = document.getElementById('settingsTemplate');
 const showSettings = () => {
     const set = settingsTemplate.content.cloneNode(true);
-    const currSet = getSettings() ?? {};
+    const currSet = getSettings();
 
-    set.querySelector('#forceSingleThreaded').checked = currSet.forceSingleThreaded;
-    set.querySelector('#targetFileSize').value = currSet.targetFileSize;
-    set.querySelector('#customAudioBitrate').value = currSet.customAudioBitrate;
-    set.querySelector('#ffmpegPreset').value = currSet.ffmpegPreset;
-    set.querySelector('#disableDimensionLimit').checked = currSet.disableDimensionLimit;
+    for (const setting in settingDefinitions) {
+        const elem = set.querySelector(`#${setting}`);
+        if (elem) elem[settingDefinitions[setting].getter] = currSet[setting];
+    }
 
     set.serialise = () => {
         const set = document.getElementById('settingsMenu');
-        return {
-            ...getSettings(),
-            forceSingleThreaded: set.querySelector('#forceSingleThreaded').checked,
-            targetFileSize: +set.querySelector('#targetFileSize').value,
-            customAudioBitrate: +set.querySelector('#customAudioBitrate').value,
-            ffmpegPreset: set.querySelector('#ffmpegPreset').value,
-            disableDimensionLimit: set.querySelector('#disableDimensionLimit').checked
-        };
+        const currSet = getSettings();
+        for (const setting in settingDefinitions) {
+            const elem = set.querySelector(`#${setting}`);
+            if (elem) {
+                const def = settingDefinitions[setting];
+                currSet[setting] = def.setter(elem[def.getter]);
+            }
+        }
+        return currSet;
     }
     createPopup(set, {buttons: 'Save Settings'}).then((value) => {
         if (typeof value === 'object') {
@@ -470,34 +511,11 @@ document.getElementById('settings').addEventListener('click', showSettings);
 
 const getSettings = () => {
     let set = JSON.parse(localStorage.getItem(localStorageSettingsName)) || {};
+    if (typeof set !== 'object') set = {};
 
-    if (typeof set !== 'object') {
-        set = {};
-    }
-
-    if (typeof set.forceSingleThreaded !== 'boolean') {
-        set.forceSingleThreaded = false;
-    }
-
-    if (typeof set.targetFileSize !== 'number' || set.targetFileSize < 0 || Number.isNaN(set.targetFileSize)) {
-        set.targetFileSize = 0;
-    }
-
-    if (typeof set.customAudioBitrate !== 'number' || set.customAudioBitrate < 0 || Number.isNaN(set.customAudioBitrate)) {
-        set.customAudioBitrate = 0;
-    }
-
-    if (!ffmpeg_presets.includes(set.ffmpegPreset)) {
-        set.ffmpegPreset = "faster";
-    }
-
-    const defaultVideoSizes = ["8", "10", "25", "50"];
-    if (!defaultVideoSizes.includes(set.defaultVideoSize)) {
-        set.defaultVideoSize = "8";
-    }
-
-    if (typeof set.disableDimensionLimit !== 'boolean') {
-        set.disableDimensionLimit = false;
+    for (const setting in settingDefinitions) {
+        const definition = settingDefinitions[setting];
+        if (!definition.isValid(set[setting])) set[setting] = definition.default;
     }
 
     return set;
