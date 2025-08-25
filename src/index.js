@@ -369,7 +369,7 @@ fileInput.addEventListener('change', async () => {
                         'Video processing seems to be stuck...\nIf not in firefox -> I advise switching to single threaded',
                         {buttons: ['Single Threaded', 'Proceed Anyway']}
                     );
-                    if (res === 'Single Threaded') {
+                    if (res === 'Single Threaded' || res === false) {
                         disableMT = true;
                         abort.abort();
                     }
