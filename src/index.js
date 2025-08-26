@@ -450,10 +450,15 @@ fileInput.addEventListener('change', async () => {
         // download video
         const a = document.createElement('a');
         const url = URL.createObjectURL(new Blob([videoStatus.value.buffer], {type: 'video/mp4'}));
+        a.classList.add('hidden');
         a.href = url;
         a.download = outputFileName;
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }, 5000);
 
         setProgressBar(100, index);
     }
