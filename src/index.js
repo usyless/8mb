@@ -73,7 +73,9 @@ let cancelAll;
 
 const runAsync = (...args) => Promise.allSettled(args);
 
-const defaultVideoSizes = ["8", "10", "25", "50"];
+// discords limit is 10MiB
+// https://discord.com/developers/docs/reference#uploading-files
+const defaultVideoSizes = ["8", "10", "25", "50"]; // so these are in MiB
 
 const codecOverheadMultiplier = 0.9;
 const maxAudioSizeMultiplier = 0.1;
@@ -199,7 +201,7 @@ fileInput.addEventListener('change', async () => {
         const targetSize = ((settings.targetFileSize)
             ? (settings.targetFileSize)
             : (+settings.defaultVideoSize)
-        ) * 1000 * 1000 * 8 * codecOverheadMultiplier;
+        ) * 1024 * 1024 * 8 * codecOverheadMultiplier;
 
         if ((file.size * 8) <= targetSize) { // convert into bits
             const res = await createPopup(`File ${originalInputFileName} is already under the desired size!`, {
@@ -502,7 +504,7 @@ const settingDefinitions = {
         setter: (value) => value
     },
     defaultVideoSize: {
-        default: "8",
+        default: "10",
         isValid: (value) => defaultVideoSizes.includes(value),
         getter: 'value',
         setter: (value) => value
