@@ -203,7 +203,7 @@ fileInput.addEventListener('change', async () => {
             : (+settings.defaultVideoSize)
         ) * 1024 * 1024 * 8 * codecOverheadMultiplier;
 
-        if ((file.size * 8) <= targetSize) { // convert into bits
+        if ((file.size * 8) <= (targetSize / codecOverheadMultiplier)) { // convert into bits
             const res = await createPopup(`File ${originalInputFileName} is already under the desired size!`, {
                 buttons: ['Process Anyway', 'Skip']
             });
