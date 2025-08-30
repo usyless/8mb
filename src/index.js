@@ -382,6 +382,9 @@ fileInput.addEventListener('change', async () => {
 
         const [ffmpegStatus] = await runAsync(ffmpeg.exec([
             '-i', inputFileName,
+            '-map', '0:v:0', '-map', '0:a:0?',
+            '-map', '-0:s', '-map', '-0:t', '-map', '-0:d',
+            '-map_metadata', '-1',
             '-c:v', 'libx264',
             '-preset', preset,
             ...dimensions,
