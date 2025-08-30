@@ -117,7 +117,7 @@ fileInput.addEventListener('change', async () => {
     let ffmpeg;
 
     let currentMultiplier = codecOverheadMultipliers[0];
-    let lastIndex = -1;
+    let lastIndex = 0;
     let index = 1;
     let attempt = 1;
 
