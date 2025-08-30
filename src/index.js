@@ -77,7 +77,7 @@ const runAsync = (...args) => Promise.allSettled(args);
 // https://discord.com/developers/docs/reference#uploading-files
 const defaultVideoSizes = ["8", "10", "25", "50"]; // so these are in MiB
 
-const codecOverheadMultiplier = 0.9;
+const codecOverheadMultipliers = [0.9, 0.7, 0.5, 0.3];
 const maxAudioSizeMultiplier = 0.1;
 const ifNeededMaxAudioSizeMultiplier = 0.3;
 
@@ -112,26 +112,47 @@ fileInput.addEventListener('change', async () => {
 
     const totalVideos = files.length;
 
-    const setProgressBar = (prog, videoIndex) => {
-        ProgressBar.style.width = `${prog}%`;
-        ProgressBar.nextElementSibling.textContent = `${prog}% (Video ${videoIndex}/${totalVideos})`;
-    }
-
-    ProgressBar.classList.add('animate');
-    setProgressBar(0, 1);
-
     const settings = getSettings();
 
     let ffmpeg;
 
-    for (let index = 1; index <= files.length; ++index) {
+    let currentMultiplier = codecOverheadMultipliers[0];
+    let lastIndex = -1;
+    let index = 1;
+    let attempt = 1;
+
+    const setProgressBar = (prog) => {
+        ProgressBar.style.width = `${prog}%`;
+        if (attempt > 1) {
+            ProgressBar.nextElementSibling.textContent = `${prog}% (Video ${index}/${totalVideos} - Attempt ${attempt})`;
+        } else {
+            ProgressBar.nextElementSibling.textContent = `${prog}% (Video ${index}/${totalVideos})`;
+        }
+    }
+
+    ProgressBar.classList.add('animate');
+    setProgressBar(0);
+
+    for (; index <= files.length; ++index) {
         const file = files[index - 1];
+        const originalInputFileName = file.name;
+
+        ++attempt;
+        if (lastIndex !== index) {
+            attempt = 1;
+            currentMultiplier = codecOverheadMultipliers[0];
+        } else if (attempt > codecOverheadMultipliers.length) { // not >= check as its -1'd
+            await createPopup(`Failed to get ${originalInputFileName} below the desired filesize!`);
+            continue;
+        } else {
+            currentMultiplier = codecOverheadMultipliers[attempt - 1];
+        }
+        lastIndex = index;
         // always terminate ffmpeg
         ffmpeg?.terminate();
 
-        setProgressBar(1, index);
+        setProgressBar(1);
 
-        const originalInputFileName = file.name;
         let inputFileName = file.name;
 
         const abort = new AbortController();
@@ -198,12 +219,13 @@ fileInput.addEventListener('change', async () => {
             }
         }
 
-        const targetSize = ((settings.targetFileSize)
+        const targetSizeNoMultiplier = ((settings.targetFileSize)
             ? (settings.targetFileSize)
             : (+settings.defaultVideoSize)
-        ) * 1024 * 1024 * 8 * codecOverheadMultiplier;
+        ) * 1024 * 1024 * 8 * currentMultiplier;
+        const targetSize = targetSizeNoMultiplier * currentMultiplier;
 
-        if ((file.size * 8) <= (targetSize / codecOverheadMultiplier)) { // convert into bits
+        if ((file.size * 8) <= targetSizeNoMultiplier) { // convert into bits
             const res = await createPopup(`File ${originalInputFileName} is already under the desired size!`, {
                 buttons: ['Process Anyway', 'Skip']
             });
@@ -217,14 +239,14 @@ fileInput.addEventListener('change', async () => {
 
         console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
 
-        setProgressBar(2, index);
+        setProgressBar(2);
 
         const [wroteFile] = await runAsync(ffmpeg.writeFile(inputFileName, new Uint8Array(await file.arrayBuffer()), {signal: abort.signal}));
 
         if (allCancelled) break;
         else if (currentCancelled) continue;
 
-        setProgressBar(3, index);
+        setProgressBar(3);
 
         if ((wroteFile.status !== "fulfilled") || (wroteFile.value !== true)) {
             console.error(`Error writing file ${inputFileName}:`, wroteFile.reason);
@@ -238,7 +260,7 @@ fileInput.addEventListener('change', async () => {
             output_info = 'output_not_today.txt';
         }
 
-        setProgressBar(4, index);
+        setProgressBar(4);
 
         const [ffprobeStatus] = await runAsync(ffmpeg.ffprobe([
             '-v', 'error',
@@ -253,7 +275,7 @@ fileInput.addEventListener('change', async () => {
         if (allCancelled) break;
         else if (currentCancelled) continue;
 
-        setProgressBar(5, index);
+        setProgressBar(5);
 
         if ((ffprobeStatus.status !== "fulfilled") || ((ffprobeStatus.value !== 0) && (ffprobeStatus.value !== -1))) { // it seems to give -1 even on success
             console.error(`Failed to get duration of video ${inputFileName} with error:`, ffprobeStatus.reason);
@@ -345,7 +367,7 @@ fileInput.addEventListener('change', async () => {
         const onProgress = ({progress, time}) => {
             console.log(`Video ${inputFileName} -> progress: ${progress}, time: ${time}`);
             if (progress <= 1 && progress >= 0) {
-                setProgressBar((5 + (95 * progress)).toFixed(1), index);
+                setProgressBar((5 + (95 * progress)).toFixed(1));
             }
         };
 
@@ -452,6 +474,11 @@ fileInput.addEventListener('change', async () => {
             continue;
         }
 
+        if ((videoStatus.value.byteLength * 8) > targetSizeNoMultiplier) {
+            --index;
+            continue;
+        }
+
         // download video
         const a = document.createElement('a');
         const url = URL.createObjectURL(new Blob([videoStatus.value.buffer], {type: 'video/mp4'}));
@@ -465,10 +492,11 @@ fileInput.addEventListener('change', async () => {
             document.body.removeChild(a);
         }, 5000);
 
-        setProgressBar(100, index);
+        setProgressBar(100);
     }
 
-    setProgressBar(100, files.length);
+    index = totalVideos;
+    setProgressBar(100);
     fileInput.disabled = false;
     cancelSpinner();
     setDefaultText();
