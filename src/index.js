@@ -84,7 +84,7 @@ const ifNeededMaxAudioSizeMultiplier = 0.3;
 // no veryfast as it seems to be broken
 const ffmpeg_presets = ['ultrafast', 'superfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 const auto_audio_bitrates = [128 * 1000, 96 * 1000, 64 * 1000]; // bits
-const if_really_needed_audio_bitrates = [32 * 1000, 16 * 1000];
+const if_really_needed_audio_bitrates = [32 * 1000, 24 * 1000];
 
 // take into account fps too
 const bitrateToMaxDimensions = {
