@@ -133,7 +133,10 @@ fileInput.addEventListener('change', async () => {
     ProgressBar.classList.add('animate');
     setProgressBar(0);
 
+    let lastAbort;
+
     for (; index <= files.length; ++index) {
+        if (!lastAbort?.signal.aborted) lastAbort?.abort();
         const file = files[index - 1];
         const originalInputFileName = file.name;
 
@@ -156,6 +159,7 @@ fileInput.addEventListener('change', async () => {
         let inputFileName = file.name;
 
         const abort = new AbortController();
+        lastAbort = abort;
 
         currentCancelled = false;
 
@@ -494,6 +498,7 @@ fileInput.addEventListener('change', async () => {
 
         setProgressBar(100);
     }
+    if (!lastAbort?.signal.aborted) lastAbort?.abort();
 
     index = totalVideos;
     setProgressBar(100);
