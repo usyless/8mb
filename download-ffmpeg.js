@@ -51,14 +51,13 @@ for (const {url, file} of files) {
     });
 }
 
-fs.copyFile(path.join(__dirname, 'node_modules', '@ffmpeg', 'ffmpeg', 'dist', 'umd', 'ffmpeg.js'), path.join(srcDir, 'ffmpeg.js'), 0, (err) => {
-    if (err) {
-        console.error('Failed to copy ffmpeg.js:', err.message);
-    }
-});
+const umd_base = path.join(__dirname, 'node_modules', '@ffmpeg', 'ffmpeg', 'dist', 'umd');
+const umd_to_copy = ['ffmpeg.js', '814.ffmpeg.js'];
 
-fs.copyFile(path.join(__dirname, 'node_modules', '@ffmpeg', 'ffmpeg', 'dist', 'umd', '814.ffmpeg.js'), path.join(srcDir, '814.ffmpeg.js'), 0, (err) => {
-    if (err) {
-        console.error('Failed to copy 814.ffmpeg.js:', err.message);
-    }
-});
+for (const file of umd_to_copy) {
+    fs.copyFile(path.join(umd_base, file), path.join(srcDir, file), 0, (err) => {
+        if (err) {
+            console.error(`Failed to copy ${file}:`, err.message);
+        }
+    });
+}
