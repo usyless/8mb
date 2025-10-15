@@ -372,7 +372,7 @@ fileInput.addEventListener('change', async () => {
                     const size = bitrateToMaxDimensions[bitrate];
                     dimensions.push(
                         '-vf',
-                        `scale=${size}:${size}:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`
+                        `scale='if(gt(iw,${size}),${size},iw)':'if(gt(ih,${size}),${size},ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`
                     );
                     break;
                 }
