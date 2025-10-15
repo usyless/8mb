@@ -332,7 +332,7 @@ fileInput.addEventListener('change', async () => {
                 audioSize = audioBR * duration;
                 videoBitrate = Math.floor((targetSize - audioSize) / duration);
                 if ((audioSize < (targetSize * maxAudioSizeMultiplier))
-                    && (videoBitrate > FFMPEG_MINIMUM_VIDEO_BITRATE)) break;
+                    && (videoBitrate >= FFMPEG_MINIMUM_VIDEO_BITRATE)) break;
             }
 
             if ((audioSize >= targetSize) || (videoBitrate < FFMPEG_MINIMUM_VIDEO_BITRATE)) {
@@ -342,7 +342,7 @@ fileInput.addEventListener('change', async () => {
                     audioSize = audioBR * duration;
                     videoBitrate = Math.floor((targetSize - audioSize) / duration);
                     if ((audioSize < (targetSize * ifNeededMaxAudioSizeMultiplier))
-                        && (videoBitrate > FFMPEG_MINIMUM_VIDEO_BITRATE)) break;
+                        && (videoBitrate >= FFMPEG_MINIMUM_VIDEO_BITRATE)) break;
                 }
             }
         }
