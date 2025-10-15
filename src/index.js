@@ -412,7 +412,7 @@ fileInput.addEventListener('change', async () => {
             })(10000);
         }
 
-        const [ffmpegStatus] = await runAsync(ffmpeg.exec([
+        const ffmpegParameters = [
             '-i', inputFileName,
             '-map', '0:v:0', '-map', '0:a:0?',
             '-map', '-0:s', '-map', '-0:t', '-map', '-0:d',
@@ -425,7 +425,11 @@ fileInput.addEventListener('change', async () => {
             '-c:a', 'aac',
             '-b:a', audioBitrate.toString(),
             outputFileName
-        ], -1, {signal: abort.signal}));
+        ];
+        console.log("Ffmpeg command parameters:", ffmpegParameters);
+        const [ffmpegStatus] = await runAsync(
+            ffmpeg.exec(ffmpegParameters, -1, {signal: abort.signal})
+        );
 
         ffmpeg.off('progress', onProgress);
 
