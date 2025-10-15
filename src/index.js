@@ -36,6 +36,8 @@ const getFFmpeg = (() => {
     return async (forceSingleThreaded, signal) => {
         if (!ffmpeg.loaded) {
             try {
+                console.log('Force single threaded:', forceSingleThreaded);
+                console.log('Cross origin isolated?:', window.crossOriginIsolated);
                 baseURL = (forceSingleThreaded || !window.crossOriginIsolated) ? ffmpegSingleBase : ffmpegMTBase;
                 const loadData = {
                     coreURL: await toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript'),
