@@ -112,7 +112,10 @@ fileInput.addEventListener('change', async () => {
 
     const totalVideos = files.length;
 
-    const settings = getSettings();
+    const originalSettings = getSettings();
+
+    // is assigned before first use
+    let settings;
 
     let ffmpeg;
 
@@ -144,6 +147,7 @@ fileInput.addEventListener('change', async () => {
         if (lastIndex !== index) {
             attempt = 1;
             currentMultiplier = codecOverheadMultipliers[0];
+            settings = structuredClone(originalSettings);
         } else if (attempt > codecOverheadMultipliers.length) { // not >= check as its -1'd
             await createPopup(`Failed to get ${originalInputFileName} below the desired filesize!`);
             continue;
@@ -427,7 +431,7 @@ fileInput.addEventListener('change', async () => {
 
         if (disableMT) {
             --index;
-            settings.forceSingleThreaded = true;
+            originalSettings.forceSingleThreaded = true;
             continue;
         }
 
@@ -440,27 +444,9 @@ fileInput.addEventListener('change', async () => {
             if (dimensions.length > 0) {
                 console.log(`Trying to run command again for ${inputFileName} without dimensions limit`);
                 // try again with no limit
-                const [ffmpegStatus] = await runAsync(ffmpeg.exec([
-                    '-i', inputFileName,
-                    '-c:v', 'libx264',
-                    '-preset', preset,
-                    '-b:v', videoBitrate.toString(),
-                    '-maxrate', videoBitrate.toString(),
-                    '-c:a', 'aac',
-                    '-b:a', audioBitrate.toString(),
-                    outputFileName
-                ], -1, {signal: abort.signal}));
-
-                console.log('FFMpeg:', ffmpegStatus);
-
-                if (allCancelled) break;
-                else if (currentCancelled) continue;
-
-                if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
-                    console.error(`Failed to exec ffmpeg command for video ${inputFileName} with error:`, ffmpegStatus.reason);
-                    await createPopup(`Failed to exec ffmpeg command for video ${originalInputFileName} with error: ${ffmpegStatus.reason}`);
-                    continue;
-                }
+                --index;
+                settings.disableDimensionLimit = true;
+                continue;
             } else {
                 await createPopup(`Failed to exec ffmpeg command for video ${originalInputFileName} with error: ${ffmpegStatus.reason}`);
                 continue;
