@@ -96,6 +96,8 @@ const bitrateToMaxDimensions = {
     // otherwise none i guess
 }
 
+const FFMPEG_MINIMUM_VIDEO_BITRATE = 1000;
+
 /** @type {HTMLInputElement} */
 const fileInput = document.getElementById('file');
 const ProgressBar = document.getElementById('progress').firstElementChild;
@@ -316,42 +318,48 @@ fileInput.addEventListener('change', async () => {
 
         let audioBitrate; // bps
         let audioSize; // bits
+        let videoBitrate; // bps
 
         if (settings.customAudioBitrate) {
             audioBitrate = settings.customAudioBitrate * 1000;
             audioSize = audioBitrate * duration;
+            videoBitrate = Math.floor((targetSize - audioSize) / duration);
         } else {
             for (const audioBR of auto_audio_bitrates) {
                 audioBitrate = audioBR;
                 audioSize = audioBR * duration;
-                if (audioSize < (targetSize * maxAudioSizeMultiplier)) break;
+                videoBitrate = Math.floor((targetSize - audioSize) / duration);
+                if ((audioSize < (targetSize * maxAudioSizeMultiplier))
+                    && (videoBitrate > FFMPEG_MINIMUM_VIDEO_BITRATE)) break;
             }
 
-            if (audioSize >= targetSize) {
+            if ((audioSize >= targetSize) || (videoBitrate < FFMPEG_MINIMUM_VIDEO_BITRATE)) {
                 // fall back to the very bad audio qualities
                 for (const audioBR of if_really_needed_audio_bitrates) {
                     audioBitrate = audioBR;
                     audioSize = audioBR * duration;
-                    if (audioSize < (targetSize * ifNeededMaxAudioSizeMultiplier)) break;
+                    videoBitrate = Math.floor((targetSize - audioSize) / duration);
+                    if ((audioSize < (targetSize * ifNeededMaxAudioSizeMultiplier))
+                        && (videoBitrate > FFMPEG_MINIMUM_VIDEO_BITRATE)) break;
                 }
             }
         }
 
         // dont check against leeway here incase its gone super low and still isn't passing
         // although that shouldn't be the case ever
-        if (audioSize >= targetSize) {
-            console.error(`Audio of video ${inputFileName} will be larger than target size!`);
+        if ((audioSize >= targetSize) || (videoBitrate < FFMPEG_MINIMUM_VIDEO_BITRATE)) {
+            console.error(`Audio of video ${inputFileName} will be larger than target size, or video bitrate is too low!`);
 
             if (settings.customAudioBitrate) {
                 console.error(`This is potentially due to the custom set bitrate of ${settings.customAudioBitrate}kbps`);
-                await createPopup(`Audio of video ${originalInputFileName} will be larger than target size!\nMaybe try disabling your custom audio bitrate (${settings.customAudioBitrate}kbps)`);
+                await createPopup(`Audio of video ${originalInputFileName} will be larger than target size, or video bitrate is too low!\nMaybe try disabling your custom audio bitrate (${settings.customAudioBitrate}kbps)`);
             } else {
-                await createPopup(`Audio of video ${originalInputFileName} will be larger than target size!`);
+                await createPopup(`Audio of video ${originalInputFileName} will be larger than target size, or video bitrate is too low!`);
             }
             continue;
         }
 
-        const videoBitrate = Math.floor((targetSize - audioSize) / duration); // bps
+        videoBitrate = Math.floor((targetSize - audioSize) / duration); // bps
         const preset = settings.ffmpegPreset;
 
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${inputFileName}`);
