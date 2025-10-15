@@ -362,8 +362,10 @@ fileInput.addEventListener('change', async () => {
             for (const bitrate in bitrateToMaxDimensions) {
                 if (videoBitrate <= +bitrate) {
                     const size = bitrateToMaxDimensions[bitrate];
-                    dimensions.push('-vf');
-                    dimensions.push(`scale='if(gt(a,1),min(iw\\,${size}),-1)':'if(gt(a,1),-1,min(ih\\,${size}))'`);
+                    dimensions.push(
+                        '-vf',
+                        `scale=${size}:${size}:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`
+                    );
                     break;
                 }
             }
