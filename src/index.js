@@ -448,6 +448,7 @@ fileInput.addEventListener('change', async () => {
         if (disableMT) {
             --index;
             originalSettings.forceSingleThreaded = true;
+            settings.forceSingleThreaded = true;
             continue;
         }
 
