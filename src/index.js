@@ -23,7 +23,7 @@ const ffmpegMTBase = 'ffmpeg-mt/';
 let baseURL;
 
 if (navigator.userAgent.includes('Edg/')) {
-    for (const elem of document.querySelectorAll('[data-edge]')) elem.classList.remove('hidden');
+    document.body.classList.add('Edge');
 }
 
 const getFFmpeg = (() => {
@@ -231,8 +231,10 @@ fileInput.addEventListener('change', async () => {
             }
         }
 
-        const targetSizeNoMultiplier =
-            (settings.targetFileSize || (+settings.defaultVideoSize)) * 1024 * 1024 * 8;
+        const targetSizeNoMultiplier = ((settings.targetFileSize)
+            ? (settings.targetFileSize)
+            : (+settings.defaultVideoSize)
+        ) * 1024 * 1024 * 8;
         const targetSize = targetSizeNoMultiplier * currentMultiplier;
 
         if ((file.size * 8) <= targetSizeNoMultiplier) { // convert into bits
@@ -754,26 +756,29 @@ const startSpinner = (() => {
 const resizeSpinner = () => {
     const {top: parentTop, left: parentLeft} = mainBox.parentElement.getBoundingClientRect();
     const {width, height, top, left} = mainBox.getBoundingClientRect();
-    spinner.style.top = `${top - parentTop}px`;
-    spinner.style.left = `${left - parentLeft}px`;
     spinner.setAttributeNS(null, 'viewBox', `0 0 ${width} ${height}`);
     spinner.setAttributeNS(null, 'width', `${width}px`);
     spinner.setAttributeNS(null, 'height', `${height}px`);
     spinnerRect.setAttributeNS(null, 'width', `${width - 10}px`);
     spinnerRect.setAttributeNS(null, 'height', `${height - 10}px`);
+    spinner.style.top = `${top - parentTop}px`;
+    spinner.style.left = `${left - parentLeft}px`;
+    spinner.style.width = 'auto';
+    spinner.style.height = 'auto';
 
     if (spinnerRunning) startSpinner();
 }
-requestAnimationFrame(() => {
+const fixSpinnerInitial = () => {
     resizeSpinner();
     startSpinner();
     cancelSpinner();
-});
-setTimeout(() => {
-    resizeSpinner();
-    startSpinner();
-    cancelSpinner();
-}, 50);
+};
+// this solution is awful
+requestAnimationFrame(fixSpinnerInitial);
+setTimeout(fixSpinnerInitial, 50);
+setTimeout(fixSpinnerInitial, 1000);
+setTimeout(fixSpinnerInitial, 5000);
+setTimeout(fixSpinnerInitial, 10000);
 
 window.addEventListener('resize', resizeSpinner, {passive: true});
 
