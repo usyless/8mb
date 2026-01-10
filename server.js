@@ -1,5 +1,9 @@
-const express = require('express');
-const path = require('path');
+import express from 'express';
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+export const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const app = express();
 
 const port = 8181;

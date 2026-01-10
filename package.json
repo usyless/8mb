@@ -12,7 +12,7 @@
   },
   "license": "AGPL-3.0",
   "author": "usy",
-  "type": "commonjs",
+  "type": "module",
   "main": "src/index.js",
   "scripts": {
     "download": "node download-ffmpeg.js",
