@@ -39,16 +39,18 @@ const getFFmpeg = (() => {
                 console.log('Force single threaded:', forceSingleThreaded);
                 console.log('Cross origin isolated?:', window.crossOriginIsolated);
                 baseURL = (forceSingleThreaded || !window.crossOriginIsolated) ? ffmpegSingleBase : ffmpegMTBase;
-                const loadData = {
-                    coreURL: await toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript'),
-                    wasmURL: await toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm')
-                }
+                const loadData = {};
+                const promises = [
+                    toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript').then(r => (loadData.coreURL = r)),
+                    toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm').then(r => (loadData.wasmURL = r)),
+                ];
                 if (baseURL === ffmpegMTBase) {
                     console.log('Using multi threaded mode');
-                    loadData.workerURL = await toBlobURL(baseURL + 'ffmpeg-core.worker.js', 'text/javascript');
+                    promises.push(toBlobURL(baseURL + 'ffmpeg-core.worker.js', 'text/javascript').then(r => (loadData.workerURL = r)));
                 } else {
                     console.log('Using single threaded mode');
                 }
+                await Promise.all(promises);
                 console.log('Loading ffmpeg with data:', loadData);
                 console.log('Blob cache:', blobURLCache);
                 if (signal) {
