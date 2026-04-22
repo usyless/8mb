@@ -776,12 +776,7 @@ const fixSpinnerInitial = () => {
     startSpinner();
     cancelSpinner();
 };
-// this solution is awful
 requestAnimationFrame(fixSpinnerInitial);
-setTimeout(fixSpinnerInitial, 50);
-setTimeout(fixSpinnerInitial, 1000);
-setTimeout(fixSpinnerInitial, 5000);
-setTimeout(fixSpinnerInitial, 10000);
 
 window.addEventListener('resize', resizeSpinner, {passive: true});
 
