@@ -436,7 +436,6 @@ fileInput.addEventListener('change', async () => {
             '-maxrate', videoBitrate.toString(),
             '-c:a', 'aac',
             '-b:a', audioBitrate.toString(),
-            '-threads', navigator.hardwareConcurrency.toString(), // 4 for chromium, unset for firefox?
             outputFileName
         ];
         console.log("Ffmpeg command parameters:", ffmpegParameters);
