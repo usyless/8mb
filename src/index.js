@@ -770,14 +770,30 @@ const resizeSpinner = () => {
 
     if (spinnerRunning) startSpinner();
 }
-const fixSpinnerInitial = () => {
+const initSpinnerSize = async () => {
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     resizeSpinner();
     startSpinner();
     cancelSpinner();
 };
-requestAnimationFrame(fixSpinnerInitial);
 
-window.addEventListener('resize', resizeSpinner, {passive: true});
+const scheduleResizeSpinner = (() => {
+    let resizeQueued = false;
+    const framecb = () => {
+        resizeQueued = false;
+        resizeSpinner();
+    };
+    return () => {
+        if (resizeQueued) return;
+        resizeQueued = true;
+        requestAnimationFrame(framecb);
+    }
+})();
+
+window.addEventListener('load', initSpinnerSize);
+document.fonts?.ready?.then?.(resizeSpinner);
+new ResizeObserver(scheduleResizeSpinner).observe(mainBox);
+window.addEventListener('resize', scheduleResizeSpinner);
 
 spinner.addEventListener('pointerenter', startSpinner);
 spinner.addEventListener('pointerleave', cancelSpinner);
