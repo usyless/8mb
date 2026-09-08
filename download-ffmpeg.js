@@ -1,6 +1,9 @@
-const fs = require("fs");
-const https = require('https');
-const path = require('path');
+import fs from 'node:fs';
+import https from 'node:https';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ffmpegVersion = '0.12.10';
 const ffmpegURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@';
@@ -35,7 +38,7 @@ const files = [
 
 for (const {url, file} of files) {
     const p = path.join(srcDir, file);
-    fs.mkdir(path.dirname(p), () => {
+    fs.mkdir(path.dirname(p), { recursive: true }, () => {
         const f = fs.createWriteStream(p);
 
         https.get(url, (response) => {
