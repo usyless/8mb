@@ -58,7 +58,7 @@ body {
 
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
 
     width: 100%;
@@ -77,6 +77,7 @@ body {
 
     width: 100%;
     min-height: 90svh;
+    padding-top: max(20px, min(45px, 5svh));
 }
 
 #bottomContent {
@@ -85,6 +86,15 @@ body {
     width: 100%;
     padding-bottom: var(--spacing);
     padding-top: var(--spacing-largest);
+}
+
+#dropzoneWrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    max-width: 100%;
 }
 
 #mainBox {
@@ -98,7 +108,8 @@ body {
 
     max-width: 100%;
 
-    z-index: 5;
+    position: relative;
+    z-index: 10;
 
     h1 {
         margin-top: 0;
@@ -115,13 +126,14 @@ p {
 }
 
 #spinner {
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     position: absolute;
     transition: transform 0.3s ease-in-out;
     cursor: pointer;
+    z-index: 1;
 }
 
 #spinner:hover, #spinner:active {
@@ -169,7 +181,7 @@ p {
 
     padding: 15px 20px;
     cursor: pointer;
-    pointer-events: all;
+    pointer-events: auto;
 
     transition: background-color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
 }
@@ -361,4 +373,284 @@ input[type="text"] {
     > :last-child {
         margin-bottom: 0;
     }
+}
+
+#queueWrapper {
+    width: 100%;
+    max-width: 500px;
+    margin-top: 14px;
+    border-top: 1px solid var(--tertiary);
+    padding-top: 8px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    box-sizing: border-box;
+    z-index: 10;
+    position: relative;
+}
+
+#queueWrapper * {
+    pointer-events: auto;
+}
+
+#queueWrapper.collapsed {
+    border-top: 1px solid transparent;
+}
+
+#queueHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 2px 4px;
+}
+
+.queueTitleGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.queueTitle {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.queueBadge {
+    background: var(--secondary);
+    border: 1px solid var(--tertiary);
+    color: var(--text-primary-lower-opacity);
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+}
+
+.queueHeaderActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.queueBtn {
+    background: transparent;
+    border: 1px solid var(--tertiary);
+    color: var(--text-primary);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: var(--radius-smaller);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.queueBtn:hover:not(:disabled) {
+    background: #33333399;
+    border-color: var(--text-primary-lower-opacity);
+}
+
+.queueBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+#queueList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+    max-height: 215px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+#queueWrapper.collapsed #queueList {
+    display: none;
+}
+
+.queueEmptyNotice {
+    color: var(--text-primary-lower-opacity);
+    font-style: italic;
+    padding: 10px;
+    font-size: 12px;
+}
+
+.queueItem {
+    background: var(--secondary);
+    border: 1px solid var(--tertiary);
+    border-radius: 6px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 36px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.queueItem.status-processing {
+    border-color: #5865f2;
+}
+
+.queueItem.status-completed {
+    border-color: #43b58166;
+}
+
+.queueItem.status-failed {
+    border-color: #f0474766;
+}
+
+.queueItem.status-cancelled {
+    opacity: 0.6;
+}
+
+.queueItem.status-skipped {
+    opacity: 0.7;
+}
+
+.queueItemLeft {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+    text-align: left;
+}
+
+.queueItemName {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+}
+
+.queueItemMeta {
+    font-size: 11px;
+    color: var(--text-primary-lower-opacity);
+    white-space: nowrap;
+}
+
+.queueItemSavings {
+    color: #57f287;
+    font-weight: 700;
+}
+
+.queueItemRight {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.queueItemStatusBadge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    background: var(--tertiary);
+}
+
+.status-processing .queueItemStatusBadge {
+    background: #5865f222;
+    color: #9ba5ff;
+    border: 1px solid #5865f244;
+}
+
+.status-completed .queueItemStatusBadge {
+    background: #43b58122;
+    color: #57f287;
+    border: 1px solid #43b58144;
+}
+
+.status-failed .queueItemStatusBadge {
+    background: #f0474722;
+    color: #ed4245;
+    border: 1px solid #f0474744;
+}
+
+.status-cancelled .queueItemStatusBadge {
+    background: #4d4d4d22;
+    color: var(--disabled);
+}
+
+.status-skipped .queueItemStatusBadge {
+    background: #4d4d4d22;
+    color: var(--disabled);
+}
+
+.queueItemMiniProg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: #5865f2;
+    transition: width 0.15s ease;
+}
+
+.queueMiniBtn {
+    background: transparent;
+    border: 1px solid var(--tertiary);
+    color: var(--text-primary);
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.queueMiniBtn.btnDownload {
+    color: #57f287;
+    border-color: #43b58188;
+    background: #43b58122;
+}
+
+.queueMiniBtn.btnDownload:hover {
+    background: #43b58144;
+}
+
+.queueMiniBtn.btnCancel {
+    color: #ed4245;
+    border-color: #f0474766;
+    background: #f0474711;
+}
+
+.queueMiniBtn.btnCancel:hover {
+    background: #f0474733;
+}
+
+.queueMiniBtn.btnClear {
+    color: var(--text-primary-lower-opacity);
+}
+
+.queueMiniBtn.btnClear:hover {
+    background: var(--quaternary);
+    color: var(--text-primary);
+}
+
+#queueList::-webkit-scrollbar {
+    width: 5px;
+}
+#queueList::-webkit-scrollbar-track {
+    background: transparent;
+}
+#queueList::-webkit-scrollbar-thumb {
+    background: var(--tertiary);
+    border-radius: 3px;
+}
+#queueList::-webkit-scrollbar-thumb:hover {
+    background: var(--quaternary);
 }

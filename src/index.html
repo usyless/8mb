@@ -19,30 +19,50 @@
 </head>
 <body>
 <div id="wrapper">
-    <svg viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg"
-         preserveAspectRatio="xMidYMid meet" id="spinner">
-        <rect x="5" y="5" width="0px" height="0px"
-              fill="transparent" stroke="#dfdfdf" stroke-width="5"
-              rx="20" ry="20"/>
-    </svg>
-    <div id="mainBox">
-        <h1>8mb - by usy</h1>
-        <h3 data-default="Drag and drop, paste any video file, or click here to locally compress!"
-            data-processing="Processing... please wait before adding more files">
-            Drag and drop, paste any video file, or click here to locally compress!
-        </h3>
-        <p>It may be slow but it's all done on your device, no data ever leaves it</p>
-        <p>Not working? Turn on "Force single threaded mode" in the settings!</p>
-        <p>Want more speed at the expense of quality? Make the preset in the settings faster</p>
-        <div data-edge>
-            <p>Using edge? Performance will be INCREDIBLY slow... try disabling "Enhanced Security" for this site</p>
-            <p>This is found under the (i) icon on the left of the address bar</p>
-            <p>(You will also likely have to turn on single threaded mode)</p>
-        </div>
-        <div id="videos">
-            <div id="progress">
-                <div></div>
-                <div>0% (Video 0/0)</div>
+    <div id="dropzoneWrapper">
+        <svg viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg"
+             preserveAspectRatio="xMidYMid meet" id="spinner">
+            <rect x="5" y="5" width="0px" height="0px"
+                  fill="transparent" stroke="#dfdfdf" stroke-width="5"
+                  rx="20" ry="20"/>
+        </svg>
+        <div id="mainBox">
+            <h1>8mb - by usy</h1>
+            <h3 data-default="Drag and drop, paste any video file, or click here to locally compress!"
+                data-processing="Processing queue... you can continue adding more files!">
+                Drag and drop, paste any video file, or click here to locally compress!
+            </h3>
+            <p>It may be slow but it's all done on your device, no data ever leaves it</p>
+            <p>Not working? Turn on "Force single threaded mode" in the settings!</p>
+            <p>Want more speed at the expense of quality? Make the preset in the settings faster</p>
+            <div data-edge>
+                <p>Using edge? Performance will be INCREDIBLY slow... try disabling "Enhanced Security" for this site</p>
+                <p>This is found under the (i) icon on the left of the address bar</p>
+                <p>(You will also likely have to turn on single threaded mode)</p>
+            </div>
+            <div id="videos">
+                <div id="progress">
+                    <div></div>
+                    <div>0% (No videos)</div>
+                </div>
+            </div>
+            <div id="queueWrapper" class="queue-empty collapsed">
+                <div id="queueHeader">
+                    <div class="queueTitleGroup">
+                        <span class="queueTitle">Queue</span>
+                        <span id="queueBadge" class="queueBadge">0 items</span>
+                    </div>
+                    <div class="queueHeaderActions">
+                        <button id="clearCompletedQueue" class="queueBtn" title="Clear finished items" disabled>Clear Finished</button>
+                        <button id="toggleQueueCollapse" class="queueBtn" title="Collapse or expand the queue">
+                            <span id="collapseIcon">▼</span>
+                            <span id="collapseText">Expand</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="queueList">
+                    <div class="queueEmptyNotice">Queue is empty. Add videos above!</div>
+                </div>
             </div>
         </div>
     </div>
@@ -101,7 +121,7 @@
     </div>
 </template>
 
-<input type="file" id="file" accept="video/*" class="hidden">
+<input type="file" id="file" accept="video/*" class="hidden" multiple>
 <script src="./updater.js" type="module"></script>
 <script src="./ffmpeg.js" type="module"></script>
 <script src="./index.js" type="module"></script>
