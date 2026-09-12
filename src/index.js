@@ -289,13 +289,13 @@ const ifNeededMaxAudioSizeMultiplier = 0.3;
 const auto_audio_bitrates = [128 * 1000, 96 * 1000, 64 * 1000]; // bits
 const if_really_needed_audio_bitrates = [32 * 1000, 24 * 1000];
 
-const bitrateToMaxDimensions = {
-    [(2 * 1000 * 1000)]: 640,
-    [(4 * 1000 * 1000)]: 854,
-    [(8 * 1000 * 1000)]: 1280,
-    [(15 * 1000 * 1000)]: 1920,
-    [(30 * 1000 * 1000)]: 2560
-};
+const bitrateThresholds = [
+    { maxBitrate: 2 * 1000 * 1000,  maxDim: 640 },
+    { maxBitrate: 4 * 1000 * 1000,  maxDim: 854 },
+    { maxBitrate: 8 * 1000 * 1000,  maxDim: 1280 },
+    { maxBitrate: 15 * 1000 * 1000, maxDim: 1920 },
+    { maxBitrate: 30 * 1000 * 1000, maxDim: 2560 }
+];
 
 const FFMPEG_MINIMUM_VIDEO_BITRATE = 1000;
 
@@ -896,23 +896,31 @@ async function processVideoItem(item) {
 
         console.log(`Video bitrate: ${videoBitrate / 1000}kbps\nAudio bitrate: ${audioBitrate / 1000}kbps\nPreset: ${preset}\nFile: ${actualInputFileName}`);
 
-        const dimensions = [];
-
+        let targetMaxDim = null;
         if (!settings.disableDimensionLimit) {
-            for (const bitrate in bitrateToMaxDimensions) {
-                if (videoBitrate <= +bitrate) {
-                    const size = bitrateToMaxDimensions[bitrate];
-                    dimensions.push(
-                        '-vf',
-                        `scale='if(gt(iw,${size}),${size},iw)':'if(gt(ih,${size}),${size},ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`
-                    );
+            for (const {maxBitrate, maxDim} of bitrateThresholds) {
+                if (videoBitrate <= maxBitrate) {
+                    targetMaxDim = maxDim;
                     break;
                 }
             }
-            // if it hasn't been assigned one it means bitrate is high enough to not care
         }
 
-        console.log(`Setting dimensions:`, dimensions);
+        const dimensions = [];
+        if (targetMaxDim) {
+            dimensions.push(
+                '-vf',
+                `scale='min(${targetMaxDim},iw)':'min(${targetMaxDim},ih)':force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`
+            );
+        } else {
+            // always ensure even dimensions
+            dimensions.push(
+                '-vf',
+                'scale=trunc(iw/2)*2:trunc(ih/2)*2'
+            );
+        }
+
+        console.log(`Setting dimensions (targetMaxDim: ${targetMaxDim}):`, dimensions);
 
         const onProgress = ({progress, time}) => {
             console.log(`Video ${actualInputFileName} -> progress: ${progress}, time: ${time}`);
@@ -1012,8 +1020,8 @@ async function processVideoItem(item) {
         if ((ffmpegStatus.status !== "fulfilled") || (ffmpegStatus.value !== 0)) {
             console.error(`Failed to exec ffmpeg command for video ${actualInputFileName} with error:`, ffmpegStatus.reason);
 
-            if (dimensions.length > 0) {
-                console.log(`Trying to run command again for ${actualInputFileName} without dimensions limit`);
+            if (targetMaxDim && !settings.disableDimensionLimit) {
+                console.log(`Trying to run command again for ${actualInputFileName} without downscaling dimension limits`);
                 --attempt;
                 settings.disableDimensionLimit = true;
                 continue;
