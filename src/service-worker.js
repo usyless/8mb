@@ -1,4 +1,4 @@
-const cacheName = 'v29';
+const cacheName = 'v30';
 
 const contentToCache = [
     './favicon.ico',
@@ -12,7 +12,7 @@ const contentToCache = [
     './index.js',
     './popups.js',
     './ffmpeg.js',
-    './814.ffmpeg.js',
+    './822.ffmpeg.js',
     './updater.js',
 
     './8mb.webmanifest',
@@ -21,7 +21,6 @@ const contentToCache = [
     './ffmpeg/ffmpeg-core.wasm',
     './ffmpeg-mt/ffmpeg-core.js',
     './ffmpeg-mt/ffmpeg-core.wasm',
-    './ffmpeg-mt/ffmpeg-core.worker.js',
 
     './assets/fonts/open-sans-latin-400-normal.woff2',
     './assets/fonts/open-sans-latin-700-normal.woff2',

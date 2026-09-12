@@ -4,19 +4,6 @@ import {createPopup} from "./popups.js";
 
 const {FFmpeg} = /** @type {typeof import('@ffmpeg/ffmpeg')} */ (window.FFmpegWASM || self.FFmpegWASM || FFmpegWASM);
 
-const blobURLCache = new Map();
-const toBlobURL = async (url, mimeType) => {
-    let cached = blobURLCache.get(url);
-    if (!cached) {
-        const r = await fetch(url);
-        const buffer = await r.arrayBuffer();
-        const blob = new Blob([buffer], {type: mimeType});
-        cached = URL.createObjectURL(blob);
-        blobURLCache.set(url, cached);
-    }
-    return cached;
-};
-
 const localStorageSettingsName = '8mb-settings';
 const ffmpegSingleBase = 'ffmpeg/';
 const ffmpegMTBase = 'ffmpeg-mt/';
@@ -131,7 +118,7 @@ const setDefaultText = () => {
     resizeSpinner();
 };
 
-const defaultVideoSizes = ["8", "10", "25", "50"]; // MiB
+const defaultVideoSizes = ["8", "10", "20", "25", "50"]; // MiB
 const ffmpeg_presets = ['ultrafast', 'superfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 
 const settingDefinitions = {
@@ -160,7 +147,7 @@ const settingDefinitions = {
         setter: (value) => value
     },
     defaultVideoSize: {
-        default: "10",
+        default: "20",
         isValid: (value) => defaultVideoSizes.includes(value),
         getter: 'value',
         setter: (value) => value
@@ -266,20 +253,15 @@ const getFFmpeg = async (forceSingleThreaded, signal) => {
                 });
             }
 
-            const loadData = {};
-            const promises = [
-                toBlobURL(baseURL + 'ffmpeg-core.js', 'text/javascript').then(r => (loadData.coreURL = r)),
-                toBlobURL(baseURL + 'ffmpeg-core.wasm', 'application/wasm').then(r => (loadData.wasmURL = r)),
-            ];
-            if (baseURL === ffmpegMTBase) {
-                console.log('Using multi threaded mode');
-                promises.push(toBlobURL(baseURL + 'ffmpeg-core.worker.js', 'text/javascript').then(r => (loadData.workerURL = r)));
-            } else {
-                console.log('Using single threaded mode');
-            }
-            await Promise.all(promises);
+            const loadData = {
+                coreURL: baseURL + 'ffmpeg-core.js',
+                wasmURL: baseURL + 'ffmpeg-core.wasm',
+            };
+
+            if (baseURL === ffmpegMTBase) console.log('Using multi threaded mode');
+            else console.log('Using single threaded mode');
             console.log('Loading ffmpeg with data:', loadData);
-            console.log('Blob cache:', blobURLCache);
+
             if (signal) {
                 await ffmpegInstance.load(loadData, {signal});
             } else {

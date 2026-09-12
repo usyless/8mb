@@ -3,5 +3,5 @@
 *.out.*
 /src/ffmpeg
 /src/ffmpeg-mt
-/src/ffmpeg.js
-/src/814.ffmpeg.js
+/src/ffmpeg.js*
+/src/*.ffmpeg.js*
