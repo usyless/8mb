@@ -11,7 +11,7 @@ Uses [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm)! Therefore perform
 - Custom audio bitrate
 - FFmpeg quality preset
 
-# Running yourself
+# Running locally
 - Clone this repository
 - Set your directory the cloned folder
 - run `npm init`, given that you have node.js in your PATH
@@ -19,7 +19,7 @@ Uses [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm)! Therefore perform
 - finally, run `npm run dev` and open the url in the console
 
 # Hosting
-- It can be statically hosted once you have built it once
+- It can be statically hosted once you have built it once (npm run build)
 - The required folders are: `ffmpeg` and `ffmpeg-mt`
 - The required files are: `8mb.webmanifest`, `bundle.js`, `favicon.ico`, `favicon.svg`, `index.html`, `*.css`, `service-worker.js`, `worker.js`
 - Check out [my github.io page of 8mb as an example](https://github.com/usyless/usyless.github.io/tree/main/8mb)
