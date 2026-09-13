@@ -661,9 +661,31 @@ async function processNext() {
     }
 }
 
+function getDynamicKeyFrameInterval(duration, videoBitrate) {
+    if (duration <= 8) {
+        return Math.max(1, Math.floor(duration / 2));
+    }
+
+    if (videoBitrate < 1_200_000) {
+        return Math.min(8, Math.max(4, Math.round(duration / 10)));
+    }
+
+    if (videoBitrate < 3_000_000) {
+        return Math.min(5, Math.max(3, Math.round(duration / 8)));
+    }
+
+    return 3;
+}
+
 async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier) {
     let probeInput = null;
     try {
+        const isFirefox = navigator.userAgent.includes('Firefox');
+        if (isFirefox) {
+            console.warn('[Mediabunny] Firefox WebCodecs does not support compliant MP4/AAC encoding. Falling back to FFmpeg.wasm.');
+            return false;
+        }
+
         console.log(`[Mediabunny] Attempting compression for ${item.name}`);
         item.progress = 1;
         item.stageText = 'Probing with Mediabunny...';
@@ -702,16 +724,9 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
             return false;
         }
 
-        let audioCodec = null;
-        if (audioTrack) {
-            if (await canEncodeAudio('aac')) {
-                audioCodec = 'aac';
-            } else if (await canEncodeAudio('opus')) {
-                audioCodec = 'opus';
-            } else {
-                console.warn('[Mediabunny] Neither AAC nor Opus audio encoding is supported');
-                return false;
-            }
+        if (audioTrack && !(await canEncodeAudio('aac'))) {
+            console.warn('[Mediabunny] AAC encoding not supported natively; falling back to FFmpeg.wasm for compliant MP4');
+            return false;
         }
 
         const duration = await probeInput.computeDuration();
@@ -754,7 +769,7 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
             let audioSize = 0;
             let videoBitrate = 0;
 
-            if (audioTrack && audioCodec) {
+            if (audioTrack) {
                 if (mbSettings.customAudioBitrate) {
                     audioBitrate = mbSettings.customAudioBitrate * 1000;
                     audioSize = audioBitrate * duration;
@@ -830,16 +845,21 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
                     target: new BufferTarget(),
                 });
 
+                const keyFrameInterval = getDynamicKeyFrameInterval(duration, videoBitrate);
+
                 const videoOptions = {
                     codec: 'avc',
                     quality: new Quality({ bitrate: videoBitrate }),
                     width: targetWidth,
                     height: targetHeight,
-                    fit: 'contain',
+                    fit: 'fill',
+                    keyFrameInterval: keyFrameInterval,
+                    hardwareAcceleration: 'no-preference',
+                    allowRotationMetadata: false,
                 };
 
-                const audioOptions = (audioTrack && audioCodec) ? {
-                    codec: audioCodec,
+                const audioOptions = audioTrack ? {
+                    codec: 'aac',
                     quality: new Quality({ bitrate: audioBitrate }),
                 } : {
                     discard: true,
