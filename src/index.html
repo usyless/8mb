@@ -33,7 +33,7 @@
                 Drag and drop, paste any video file, or click here to locally compress!
             </h3>
             <p>It may be slow but it's all done on your device, no data ever leaves it</p>
-            <p>Progress stuck at <5%? Turn on "Force single threaded mode" in the settings!</p>
+            <p>Progress stuck at &lt;5%? Turn on "Force single threaded mode" in the settings!</p>
             <p>Want more speed at the expense of quality? Make the preset in the settings faster</p>
             <div data-edge>
                 <p>Using edge? Performance will be INCREDIBLY slow... try disabling "Enhanced Security" for this site</p>
@@ -88,6 +88,10 @@
 
 <template id="settingsTemplate">
     <div id="settingsMenu">
+        <div>
+            <label for="forceFFmpeg">Force FFmpeg.wasm (bypass Mediabunny / WebCodecs)</label>
+            <input type="checkbox" id="forceFFmpeg">
+        </div>
         <div>
             <label for="forceSingleThreaded">Force single threaded mode (default off)</label>
             <input type="checkbox" id="forceSingleThreaded">

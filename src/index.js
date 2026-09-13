@@ -3,6 +3,18 @@
 import "./updater.js";
 import {createPopup} from "./popups.js";
 import {FFmpeg} from "./ffmpeg-esm/index.js"
+import {
+    Input,
+    ALL_FORMATS,
+    BlobSource,
+    Output,
+    BufferTarget,
+    Mp4OutputFormat,
+    Quality,
+    Conversion,
+    canEncodeAudio,
+    canEncodeVideo
+} from 'mediabunny';
 
 const localStorageSettingsName = '8mb-settings';
 const ffmpegSingleBase = './ffmpeg/';
@@ -122,6 +134,12 @@ const defaultVideoSizes = ["8", "10", "20", "25", "50"]; // MiB
 const ffmpeg_presets = ['ultrafast', 'superfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'];
 
 const settingDefinitions = {
+    forceFFmpeg: {
+        default: false,
+        isValid: (value) => typeof value === 'boolean',
+        getter: 'checked',
+        setter: (value) => value
+    },
     forceSingleThreaded: {
         default: false,
         isValid: (value) => typeof value === 'boolean',
@@ -546,7 +564,7 @@ function clearItem(item) {
 }
 
 function clearFinished() {
-    const finishedItems = queue.filter(item => 
+    const finishedItems = queue.filter(item =>
         item.status === 'completed' || item.status === 'cancelled' || item.status === 'failed' || item.status === 'skipped'
     );
     for (const item of finishedItems) {
@@ -643,6 +661,293 @@ async function processNext() {
     }
 }
 
+async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier) {
+    let probeInput = null;
+    try {
+        console.log(`[Mediabunny] Attempting compression for ${item.name}`);
+        item.progress = 1;
+        item.stageText = 'Probing with Mediabunny...';
+        updateItemProgressUI(item);
+        updateMainProgressBar();
+
+        probeInput = new Input({
+            source: new BlobSource(item.file),
+            formats: ALL_FORMATS,
+        });
+
+        if (!(await probeInput.canRead())) {
+            console.warn('[Mediabunny] Cannot read file format');
+            return false;
+        }
+
+        const videoTrack = await probeInput.getPrimaryVideoTrack();
+        if (!videoTrack) {
+            console.warn('[Mediabunny] No primary video track found');
+            return false;
+        }
+
+        if (!(await videoTrack.canDecode())) {
+            console.warn('[Mediabunny] Video track cannot be decoded');
+            return false;
+        }
+
+        const audioTrack = await probeInput.getPrimaryAudioTrack();
+        if (audioTrack && !(await audioTrack.canDecode())) {
+            console.warn('[Mediabunny] Audio track cannot be decoded');
+            return false;
+        }
+
+        if (!(await canEncodeVideo('avc'))) {
+            console.warn('[Mediabunny] AVC (H.264) video encoding is not supported in this browser');
+            return false;
+        }
+
+        let audioCodec = null;
+        if (audioTrack) {
+            if (await canEncodeAudio('aac')) {
+                audioCodec = 'aac';
+            } else if (await canEncodeAudio('opus')) {
+                audioCodec = 'opus';
+            } else {
+                console.warn('[Mediabunny] Neither AAC nor Opus audio encoding is supported');
+                return false;
+            }
+        }
+
+        const duration = await probeInput.computeDuration();
+        if (!duration || Number.isNaN(duration) || duration <= 0) {
+            console.warn('[Mediabunny] Invalid duration probed');
+            return false;
+        }
+
+        const origWidth = await videoTrack.getDisplayWidth();
+        const origHeight = await videoTrack.getDisplayHeight();
+        if (!origWidth || !origHeight) {
+            console.warn('[Mediabunny] Invalid video dimensions probed');
+            return false;
+        }
+
+        probeInput.dispose();
+        probeInput = null;
+
+        let mbSettings = structuredClone(settings);
+        let lastAbort = null;
+
+        for (let attempt = 1; attempt <= codecOverheadMultipliers.length; ++attempt) {
+            if (item.status === 'cancelled') return false;
+            if (!lastAbort?.signal.aborted) lastAbort?.abort();
+
+            const abort = new AbortController();
+            lastAbort = abort;
+            item.abortController = abort;
+
+            const currentMultiplier = codecOverheadMultipliers[attempt - 1];
+            const targetSize = targetSizeNoMultiplier * currentMultiplier;
+
+            item.attempt = attempt;
+            item.progress = 2;
+            item.stageText = attempt > 1 ? `Starting attempt ${attempt}...` : 'Preparing...';
+            updateItemProgressUI(item);
+            updateMainProgressBar();
+
+            let audioBitrate = 0;
+            let audioSize = 0;
+            let videoBitrate = 0;
+
+            if (audioTrack && audioCodec) {
+                if (mbSettings.customAudioBitrate) {
+                    audioBitrate = mbSettings.customAudioBitrate * 1000;
+                    audioSize = audioBitrate * duration;
+                    videoBitrate = Math.floor((targetSize - audioSize) / duration);
+                } else {
+                    for (const audioBR of auto_audio_bitrates) {
+                        audioBitrate = audioBR;
+                        audioSize = audioBR * duration;
+                        videoBitrate = Math.floor((targetSize - audioSize) / duration);
+                        if ((audioSize < (targetSize * maxAudioSizeMultiplier))
+                            && (videoBitrate >= FFMPEG_MINIMUM_VIDEO_BITRATE)) break;
+                    }
+
+                    if ((audioSize >= targetSize) || (videoBitrate < FFMPEG_MINIMUM_VIDEO_BITRATE)) {
+                        for (const audioBR of if_really_needed_audio_bitrates) {
+                            audioBitrate = audioBR;
+                            audioSize = audioBR * duration;
+                            videoBitrate = Math.floor((targetSize - audioSize) / duration);
+                            if ((audioSize < (targetSize * ifNeededMaxAudioSizeMultiplier))
+                                && (videoBitrate >= FFMPEG_MINIMUM_VIDEO_BITRATE)) break;
+                        }
+                    }
+                }
+
+                if ((audioSize >= targetSize) || (videoBitrate < FFMPEG_MINIMUM_VIDEO_BITRATE)) {
+                    console.warn('[Mediabunny] Audio size exceeds target or video bitrate too low');
+                    return false;
+                }
+            } else {
+                videoBitrate = Math.floor(targetSize / duration);
+                if (videoBitrate < FFMPEG_MINIMUM_VIDEO_BITRATE) {
+                    console.warn('[Mediabunny] Video bitrate too low for target size');
+                    return false;
+                }
+            }
+
+            let targetMaxDim = null;
+            if (!mbSettings.disableDimensionLimit) {
+                for (const {maxBitrate, maxDim} of bitrateThresholds) {
+                    if (videoBitrate <= maxBitrate) {
+                        targetMaxDim = maxDim;
+                        break;
+                    }
+                }
+            }
+
+            let targetWidth = origWidth;
+            let targetHeight = origHeight;
+
+            if (targetMaxDim && Math.max(origWidth, origHeight) > targetMaxDim) {
+                const scale = targetMaxDim / Math.max(origWidth, origHeight);
+                targetWidth = Math.round(origWidth * scale);
+                targetHeight = Math.round(origHeight * scale);
+            }
+
+            // Always ensure even dimensions
+            targetWidth = Math.max(2, Math.floor(targetWidth / 2) * 2);
+            targetHeight = Math.max(2, Math.floor(targetHeight / 2) * 2);
+
+            console.log(`[Mediabunny] Attempt ${attempt}: Video bitrate: ${videoBitrate / 1000}kbps, Audio bitrate: ${audioBitrate / 1000}kbps, Dimensions: ${targetWidth}x${targetHeight}`);
+
+            let conversionInput = null;
+            let conversion = null;
+
+            try {
+                conversionInput = new Input({
+                    source: new BlobSource(item.file),
+                    formats: ALL_FORMATS,
+                });
+
+                const conversionOutput = new Output({
+                    format: new Mp4OutputFormat({ fastStart: 'in-memory' }),
+                    target: new BufferTarget(),
+                });
+
+                const videoOptions = {
+                    codec: 'avc',
+                    quality: new Quality({ bitrate: videoBitrate }),
+                    width: targetWidth,
+                    height: targetHeight,
+                    fit: 'contain',
+                };
+
+                const audioOptions = (audioTrack && audioCodec) ? {
+                    codec: audioCodec,
+                    quality: new Quality({ bitrate: audioBitrate }),
+                } : {
+                    discard: true,
+                };
+
+                conversion = await Conversion.init({
+                    input: conversionInput,
+                    output: conversionOutput,
+                    tracks: 'primary',
+                    tags: {},
+                    video: videoOptions,
+                    audio: audioOptions,
+                });
+
+                if (!conversion.isValid) {
+                    console.warn('[Mediabunny] Conversion is invalid:', conversion.discardedTracks);
+                    return false;
+                }
+
+                if (abort.signal.aborted || item.status === 'cancelled') {
+                    item.status = 'cancelled';
+                    item.stageText = 'Cancelled';
+                    return false;
+                }
+
+                const onAbort = () => {
+                    try {
+                        conversion?.cancel();
+                    } catch (e) {}
+                };
+                abort.signal.addEventListener('abort', onAbort, { once: true });
+
+                conversion.onProgress = (progress) => {
+                    if (progress <= 1 && progress >= 0) {
+                        const progPct = Math.round(5 + (95 * progress));
+                        item.progress = progPct;
+                        item.stageText = `Encoding (${progPct}%)` + (attempt > 1 ? ` [Attempt ${attempt}/${codecOverheadMultipliers.length}]` : '');
+                        updateItemProgressUI(item);
+                        updateMainProgressBar();
+                    }
+                };
+
+                await conversion.execute();
+
+                if (abort.signal.aborted || item.status === 'cancelled') {
+                    item.status = 'cancelled';
+                    item.stageText = 'Cancelled';
+                    return false;
+                }
+
+                const outputBuffer = conversionOutput.target.buffer;
+                if (!outputBuffer || outputBuffer.byteLength === 0) {
+                    console.warn('[Mediabunny] Output buffer is empty');
+                    return false;
+                }
+
+                const outputByteLength = outputBuffer.byteLength;
+                console.log(`[Mediabunny] Attempt ${attempt} finished, output size: ${outputByteLength} bytes, target: ${targetSizeNoMultiplier / 8} bytes`);
+
+                if ((outputByteLength * 8) > targetSizeNoMultiplier) {
+                    console.log(`[Mediabunny] Video output size ${outputByteLength} exceeded target ${targetSizeNoMultiplier / 8}, retrying...`);
+                    if (attempt >= codecOverheadMultipliers.length) {
+                        console.warn('[Mediabunny] Could not get below target size after all attempts');
+                        return false;
+                    }
+                    continue;
+                }
+
+                // Successfully compressed!
+                const blob = new Blob([outputBuffer], {type: 'video/mp4'});
+                item.compressedBlob = blob;
+                item.compressedSize = blob.size;
+                item.status = 'completed';
+                item.progress = 100;
+                item.stageText = 'Completed';
+
+                downloadItem(item);
+                return true;
+            } catch (convErr) {
+                if (abort.signal.aborted || item.status === 'cancelled') {
+                    item.status = 'cancelled';
+                    item.stageText = 'Cancelled';
+                    return false;
+                }
+                console.error('[Mediabunny] Conversion error:', convErr);
+                return false;
+            } finally {
+                if (conversionInput) {
+                    try {
+                        conversionInput.dispose();
+                    } catch (e) {}
+                }
+            }
+        }
+    } catch (err) {
+        if (item.status === 'cancelled') return false;
+        console.error('[Mediabunny] Pipeline error:', err);
+        return false;
+    } finally {
+        if (probeInput) {
+            try {
+                probeInput.dispose();
+            } catch (e) {}
+        }
+    }
+    return false;
+}
+
 async function processVideoItem(item) {
     if (item.status === 'cancelled') return;
 
@@ -697,6 +1002,15 @@ async function processVideoItem(item) {
     const outputFileName = inputFileNameNoExtension + '_usyless.uk_8mb.mp4';
     item.outputFileName = outputFileName;
     console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
+
+    if (!settings.forceFFmpeg) {
+        const mediabunnySuccess = await tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier);
+        if (mediabunnySuccess) return;
+        if (item.status === 'cancelled') return;
+        console.warn('[Mediabunny] Compression bypassed or failed. Falling back to FFmpeg.wasm...');
+    } else {
+        console.info('Settings configured to force FFmpeg.wasm, bypassing Mediabunny.');
+    }
 
     let lastAbort;
     let attempt = 1;

@@ -20,9 +20,8 @@
     "build": "esbuild bundle=src/index.js worker=src/ffmpeg-esm/worker.js --minify --sourcemap --target=es2021 --format=esm --bundle --outdir=src"
   },
   "devDependencies": {
-    "express": "^5.1.0"
-  },
-  "dependencies": {
-    "esbuild": "^0.28.2"
+    "express": "^5.1.0",
+    "esbuild": "^0.28.2",
+    "mediabunny": "^1.56.2"
   }
 }
