@@ -9,7 +9,9 @@
     left: 0;
 }
 
-body:not(.Edge) [data-edge] {
+body:not(.Edge) [data-edge],
+body:not(.Firefox) [data-firefox],
+body:not(.NotFirefox) [data-notfirefox] {
     display: none !important;
 }
 

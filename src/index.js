@@ -21,6 +21,13 @@ const ffmpegSingleBase = './ffmpeg/';
 const ffmpegMTBase = './ffmpeg-mt/';
 let baseURL;
 
+const isFirefox = navigator.userAgent.includes('Firefox');
+
+if (isFirefox) {
+    document.body.classList.add('Firefox');
+} else {
+    document.body.classList.add('NotFirefox');
+}
 if (navigator.userAgent.includes('Edg/')) {
     document.body.classList.add('Edge');
 }
@@ -140,6 +147,12 @@ const settingDefinitions = {
         getter: 'checked',
         setter: (value) => value
     },
+    forceMediabunny: {
+        default: false,
+        isValid: (value) => typeof value === 'boolean',
+        getter: 'checked',
+        setter: (value) => value
+    },
     forceSingleThreaded: {
         default: false,
         isValid: (value) => typeof value === 'boolean',
@@ -218,7 +231,7 @@ const showSettings = () => {
         const setMenu = document.getElementById('settingsMenu');
         const updatedSet = getSettings();
         for (const setting in settingDefinitions) {
-            const elem = setMenu.querySelector(`#${setting}`);
+            const elem = setMenu?.querySelector(`#${setting}`);
             if (elem) {
                 const def = settingDefinitions[setting];
                 updatedSet[setting] = def.setter(elem[def.getter]);
@@ -665,27 +678,17 @@ function getDynamicKeyFrameInterval(duration, videoBitrate) {
     if (duration <= 8) {
         return Math.max(1, Math.floor(duration / 2));
     }
-
     if (videoBitrate < 1_200_000) {
         return Math.min(8, Math.max(4, Math.round(duration / 10)));
-    }
-
-    if (videoBitrate < 3_000_000) {
+    } else if (videoBitrate < 3_000_000) {
         return Math.min(5, Math.max(3, Math.round(duration / 8)));
     }
-
     return 3;
 }
 
-async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier) {
+async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier, isForcedFirefox = false) {
     let probeInput = null;
     try {
-        const isFirefox = navigator.userAgent.includes('Firefox');
-        if (isFirefox) {
-            console.warn('[Mediabunny] Firefox WebCodecs does not support compliant MP4/AAC encoding. Falling back to FFmpeg.wasm.');
-            return false;
-        }
-
         console.log(`[Mediabunny] Attempting compression for ${item.name}`);
         item.progress = 1;
         item.stageText = 'Probing with Mediabunny...';
@@ -724,9 +727,17 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
             return false;
         }
 
-        if (audioTrack && !(await canEncodeAudio('aac'))) {
-            console.warn('[Mediabunny] AAC encoding not supported natively; falling back to FFmpeg.wasm for compliant MP4');
-            return false;
+        let audioCodec = null;
+        if (audioTrack) {
+            if (await canEncodeAudio('aac')) {
+                audioCodec = 'aac';
+            } else if (isForcedFirefox && (await canEncodeAudio('opus'))) {
+                // If the user forced Mediabunny in Firefox, attempt Opus even if non-standard
+                audioCodec = 'opus';
+            } else {
+                console.warn('[Mediabunny] Standard AAC audio encoding is not supported natively');
+                return false;
+            }
         }
 
         const duration = await probeInput.computeDuration();
@@ -769,7 +780,7 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
             let audioSize = 0;
             let videoBitrate = 0;
 
-            if (audioTrack) {
+            if (audioTrack && audioCodec) {
                 if (mbSettings.customAudioBitrate) {
                     audioBitrate = mbSettings.customAudioBitrate * 1000;
                     audioSize = audioBitrate * duration;
@@ -829,7 +840,9 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
             targetWidth = Math.max(2, Math.floor(targetWidth / 2) * 2);
             targetHeight = Math.max(2, Math.floor(targetHeight / 2) * 2);
 
-            console.log(`[Mediabunny] Attempt ${attempt}: Video bitrate: ${videoBitrate / 1000}kbps, Audio bitrate: ${audioBitrate / 1000}kbps, Dimensions: ${targetWidth}x${targetHeight}`);
+            const keyFrameInterval = getDynamicKeyFrameInterval(duration, videoBitrate);
+
+            console.log(`[Mediabunny] Attempt ${attempt}: Video bitrate: ${videoBitrate / 1000}kbps, Audio bitrate: ${audioBitrate / 1000}kbps, Keyframe interval: ${keyFrameInterval}s, Dimensions: ${targetWidth}x${targetHeight}`);
 
             let conversionInput = null;
             let conversion = null;
@@ -845,8 +858,6 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
                     target: new BufferTarget(),
                 });
 
-                const keyFrameInterval = getDynamicKeyFrameInterval(duration, videoBitrate);
-
                 const videoOptions = {
                     codec: 'avc',
                     quality: new Quality({ bitrate: videoBitrate }),
@@ -858,8 +869,8 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
                     allowRotationMetadata: false,
                 };
 
-                const audioOptions = audioTrack ? {
-                    codec: 'aac',
+                const audioOptions = (audioTrack && audioCodec) ? {
+                    codec: audioCodec,
                     quality: new Quality({ bitrate: audioBitrate }),
                 } : {
                     discard: true,
@@ -928,8 +939,7 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier)
                     continue;
                 }
 
-                // Successfully compressed!
-                const blob = new Blob([outputBuffer], {type: 'video/mp4'});
+                const blob = new Blob([outputBuffer], { type: 'video/mp4' });
                 item.compressedBlob = blob;
                 item.compressedSize = blob.size;
                 item.status = 'completed';
@@ -1023,13 +1033,22 @@ async function processVideoItem(item) {
     item.outputFileName = outputFileName;
     console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
 
-    if (!settings.forceFFmpeg) {
-        const mediabunnySuccess = await tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier);
-        if (mediabunnySuccess) return;
-        if (item.status === 'cancelled') return;
-        console.warn('[Mediabunny] Compression bypassed or failed. Falling back to FFmpeg.wasm...');
+    const allowMediabunny = isFirefox
+        ? Boolean(settings.forceMediabunny)
+        : !Boolean(settings.forceFFmpeg);
+
+    if (allowMediabunny) {
+        console.log(`[Compression] Attempting Mediabunny pipeline (${isFirefox ? 'Forced on Firefox' : 'Default'})...`);
+        const mediabunnySuccess = await tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier, isFirefox);
+        if (mediabunnySuccess) {
+            return;
+        }
+        if (item.status === 'cancelled') {
+            return;
+        }
+        console.warn('[Mediabunny] Compression failed or bypassed. Falling back to FFmpeg.wasm...');
     } else {
-        console.info('Settings configured to force FFmpeg.wasm, bypassing Mediabunny.');
+        console.info(`[Compression] Bypassing Mediabunny (${isFirefox ? 'Default on Firefox' : 'Forced FFmpeg in settings'}). Using FFmpeg.wasm.`);
     }
 
     let lastAbort;
