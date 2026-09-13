@@ -1,7 +1,6 @@
 /.idea
 /node_modules
 *.out.*
-/src/ffmpeg
-/src/ffmpeg-mt
-/src/ffmpeg.js*
-/src/*.ffmpeg.js*
+/src/ffmpeg*
+/src/bundle.js*
+/src/worker.js*

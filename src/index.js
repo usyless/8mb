@@ -1,12 +1,11 @@
 "use strict";
 
 import {createPopup} from "./popups.js";
-
-const {FFmpeg} = /** @type {typeof import('@ffmpeg/ffmpeg')} */ (window.FFmpegWASM || self.FFmpegWASM || FFmpegWASM);
+import {FFmpeg} from "./ffmpeg-esm/index.js"
 
 const localStorageSettingsName = '8mb-settings';
-const ffmpegSingleBase = 'ffmpeg/';
-const ffmpegMTBase = 'ffmpeg-mt/';
+const ffmpegSingleBase = './ffmpeg/';
+const ffmpegMTBase = './ffmpeg-mt/';
 let baseURL;
 
 if (navigator.userAgent.includes('Edg/')) {

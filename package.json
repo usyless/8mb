@@ -16,12 +16,13 @@
   "main": "src/index.js",
   "scripts": {
     "download": "node download-ffmpeg.js",
-    "dev": "node server.js"
+    "dev": "npm run build && node server.js",
+    "build": "esbuild bundle=src/index.js worker=src/ffmpeg-esm/worker.js --minify --sourcemap --target=es2021 --format=esm --bundle --outdir=src"
   },
   "devDependencies": {
     "express": "^5.1.0"
   },
   "dependencies": {
-    "@ffmpeg/ffmpeg": "^0.12.15"
+    "esbuild": "^0.28.2"
   }
 }

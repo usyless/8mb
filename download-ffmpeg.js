@@ -4,7 +4,7 @@ import {fileURLToPath} from 'node:url';
 import zlib from 'node:zlib';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const zipURL = 'https://github.com/usyless/ffmpeg.wasm.8mb/releases/download/v0.1/ffmpeg.zip';
+const zipURL = 'https://github.com/usyless/ffmpeg.wasm.8mb/releases/download/v0.1/ffmpeg-esm.zip';
 const srcDir = path.join(__dirname, 'src');
 
 /**
