@@ -22,3 +22,4 @@ Uses [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm)! Therefore perform
 - It can be statically hosted once you have built it once
 - The required folders are: `ffmpeg` and `ffmpeg-mt`
 - The required files are: `8mb.webmanifest`, `bundle.js`, `favicon.ico`, `favicon.svg`, `index.html`, `*.css`, `service-worker.js`, `worker.js`
+- Check out [my github.io page of 8mb as an example](https://github.com/usyless/usyless.github.io/tree/main/8mb)
