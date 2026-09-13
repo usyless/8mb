@@ -1,5 +1,6 @@
 "use strict";
 
+import "./updater.js";
 import {createPopup} from "./popups.js";
 import {FFmpeg} from "./ffmpeg-esm/index.js"
 
