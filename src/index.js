@@ -15,6 +15,14 @@ import {
     canEncodeAudio,
     canEncodeVideo
 } from 'mediabunny';
+import { registerAacEncoder } from '@mediabunny/aac-encoder';
+
+canEncodeAudio('aac').then((encodes) => {
+    if (!encodes) {
+        console.log("Registering mediabunny aac encoder");
+        registerAacEncoder();
+    }
+});
 
 const localStorageSettingsName = '8mb-settings';
 const ffmpegSingleBase = './ffmpeg/';
