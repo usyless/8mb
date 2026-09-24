@@ -1,0 +1,59 @@
+name: Build and push latest main to pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'download-ffmpeg.js'
+      - '.github/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout main repo
+      uses: actions/checkout@v7
+      with:
+        path: 8mb
+        ref: main
+        persist-credentials: false
+
+    - name: Install npm dependencies
+      working-directory: 8mb
+      run: npm i
+
+    - name: Download ffmpeg-wasm
+      working-directory: 8mb
+      run: npm run download
+
+    - name: Build project
+      working-directory: 8mb
+      run: npm run build
+
+    - name: Checkout github pages repo
+      uses: actions/checkout@v7
+      with:
+        repository: usyless/usyless.github.io
+        token: ${{ secrets.BOT_TOKEN }}
+        path: usyless.github.io
+        ref: main
+        persist-credentials: true
+
+    - name: Move built files to pages repo
+      run: |
+        rm -rf usyless.github.io/8mb/*
+        cp -rf 8mb/src/* usyless.github.io/8mb/
+        find usyless.github.io/8mb -type f -name "*.js" ! -name "bundle.js*" ! -name "worker.js*" -delete
+
+    - name: Commit and push
+      working-directory: usyless.github.io
+      run: |
+        git config --global user.name 'usy [github actions]'
+        git config --global user.email 'github-actions@github.com'
+        git add 8mb
+        git commit -m 'Update 8mb'
+        git push
