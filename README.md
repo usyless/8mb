@@ -16,11 +16,33 @@ As a fallback and for firefox which outputs broken videos using mediabunny, it u
 - FFmpeg quality preset
 
 # Running locally
-- Clone this repository
-- Set your directory the cloned folder
-- run `npm init`, given that you have node.js in your PATH
-- then run `npm run download`
-- finally, run `npm run dev` and open the url in the console
+1. Clone this repository
+2. Set your directory the cloned folder
+3. Run `npm init`, given that you have node.js in your PATH
+4. Then run `npm run download`
+5. Finally, run `npm run dev` and open the url in the console
+
+# Running with Docker
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/usyless/8mb.git
+    cd 8mb
+    ```
+2. Build the image:
+    ```bash
+    docker build -t 8mb .
+    ```
+3. Run the container:
+    ```
+    docker run -d \
+     --name=8mb \
+     --restart=unless-stopped \
+     -p 8080:80 \
+     8mb
+    ```
+4. Open http://localhost:8080 in your browser.
+> [!NOTE]
+> The container uses **Nginx** to serve static files. The `--restart=unless-stopped` flag ensures the container automatically restarts after a reboot or crash. You can change the left side of `-p 8080:80` to use a different port instead of `8080`.
 
 # Hosting
 - It can be statically hosted once you have built it once (npm run build)
