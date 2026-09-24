@@ -46,8 +46,9 @@ jobs:
     - name: Move built files to pages repo
       run: |
         rm -rf usyless.github.io/8mb/*
+        rm -rf 8mb/ffmpeg-esm
         cp -rf 8mb/src/* usyless.github.io/8mb/
-        find usyless.github.io/8mb -type f -name "*.js" ! -name "bundle.js*" ! -name "worker.js*" -delete
+        find usyless.github.io/8mb -maxdepth 1 -type f -name "*.js" ! -name "bundle.js*" ! -name "worker.js*" ! -name "service-worker.js" -delete
 
     - name: Commit and push
       working-directory: usyless.github.io
