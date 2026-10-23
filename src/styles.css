@@ -138,8 +138,10 @@ p {
     z-index: 1;
 }
 
-#spinner:hover, #spinner:active {
-    transform: scale(1.05);
+@media (hover: hover) {
+    #spinner:hover, #spinner:active {
+        transform: scale(1.05);
+    }
 }
 
 #spinner rect {

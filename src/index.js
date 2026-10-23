@@ -1565,8 +1565,13 @@ if (mainBox) {
 }
 window.addEventListener('resize', scheduleResizeSpinner);
 
-spinner?.addEventListener('pointerenter', startSpinner);
+spinner?.addEventListener('pointerenter', (e) => {
+    if (e.pointerType === 'touch') return;
+    startSpinner();
+});
 spinner?.addEventListener('pointerleave', cancelSpinner);
+spinner?.addEventListener('pointercancel', cancelSpinner);
+spinner?.addEventListener('touchcancel', cancelSpinner);
 spinner?.addEventListener('touchend', cancelSpinner);
 
 // Initial render
