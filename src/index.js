@@ -607,8 +607,16 @@ function cancelItem(item) {
     }
 }
 
+const VIDEO_EXTENSIONS = /\.(mkv|mp4|webm|avi|mov|wmv|flv|m4v|ts|ogv|3gp)$/i;
+
+function isVideoFile(file) {
+    if (file?.type?.startsWith('video/')) return true;
+    if (file?.name && VIDEO_EXTENSIONS.test(file.name)) return true;
+    return false;
+}
+
 function addFiles(files) {
-    const validFiles = Array.from(files).filter((f) => f.type.startsWith('video/'));
+    const validFiles = Array.from(files).filter(isVideoFile);
     if (validFiles.length === 0) {
         if (files.length > 0) {
             void createPopup('No valid video files provided!');
@@ -998,7 +1006,7 @@ async function processVideoItem(item) {
     const originalSettings = getSettings();
     let settings = structuredClone(originalSettings);
 
-    if (!item.file.type.startsWith('video/')) {
+    if (!isVideoFile(item.file)) {
         console.log(`File ${item.name} is not a video file!`);
         item.status = 'failed';
         item.stageText = 'Not a video file';
