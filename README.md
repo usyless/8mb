@@ -3,11 +3,9 @@
 # 8mb - by usy
 A local browser based video compressor which targets 8mb videos by default
 
-As a first priority for browsers that arent firefox it uses [mediabunny](https://mediabunny.dev/) for extremely high performance local compression!
+As a first priority it uses [mediabunny](https://mediabunny.dev/) for extremely high performance local compression!
 
-
-As a fallback and for firefox which outputs broken videos using mediabunny, it uses 
-[ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) - specifically [my fork](https://github.com/usyless/ffmpeg.wasm.8mb) which fixes multithreading for chromium! Therefore performance isn't great, but there is no server involved.
+As a fallback, or if forced in settings (e.g. for older Firefox versions which output broken videos using mediabunny), it uses [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) - specifically [my fork](https://github.com/usyless/ffmpeg.wasm.8mb) which fixes multithreading for chromium! Therefore performance isn't great, but there is no server involved.
 
 # Settings
 - Force single threaded mode (multi threaded doesnt work in some browsers such as edge)

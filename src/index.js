@@ -155,12 +155,6 @@ const settingDefinitions = {
         getter: 'checked',
         setter: (value) => value
     },
-    forceMediabunny: {
-        default: false,
-        isValid: (value) => typeof value === 'boolean',
-        getter: 'checked',
-        setter: (value) => value
-    },
     forceSingleThreaded: {
         default: false,
         isValid: (value) => typeof value === 'boolean',
@@ -702,7 +696,7 @@ function getDynamicKeyFrameInterval(duration, videoBitrate) {
     return 3;
 }
 
-async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier, isForcedFirefox = false) {
+async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier, isFirefox = false) {
     let probeInput = null;
     try {
         console.log(`[Mediabunny] Attempting compression for ${item.name}`);
@@ -747,8 +741,8 @@ async function tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier,
         if (audioTrack) {
             if (await canEncodeAudio('aac')) {
                 audioCodec = 'aac';
-            } else if (isForcedFirefox && (await canEncodeAudio('opus'))) {
-                // If the user forced Mediabunny in Firefox, attempt Opus even if non-standard
+            } else if (isFirefox && (await canEncodeAudio('opus'))) {
+                // If in Firefox without AAC, attempt Opus even if non-standard
                 audioCodec = 'opus';
             } else {
                 console.warn('[Mediabunny] Standard AAC audio encoding is not supported natively');
@@ -1049,12 +1043,10 @@ async function processVideoItem(item) {
     item.outputFileName = outputFileName;
     console.log(`Input File: ${inputFileName}\nOutput File: ${outputFileName}`);
 
-    const allowMediabunny = isFirefox
-        ? Boolean(settings.forceMediabunny)
-        : !Boolean(settings.forceFFmpeg);
+    const allowMediabunny = !Boolean(settings.forceFFmpeg);
 
     if (allowMediabunny) {
-        console.log(`[Compression] Attempting Mediabunny pipeline (${isFirefox ? 'Forced on Firefox' : 'Default'})...`);
+        console.log(`[Compression] Attempting Mediabunny pipeline (${isFirefox ? 'Firefox' : 'Default'})...`);
         const mediabunnySuccess = await tryCompressWithMediabunny(item, settings, targetSizeNoMultiplier, isFirefox);
         if (mediabunnySuccess) {
             return;
@@ -1064,7 +1056,7 @@ async function processVideoItem(item) {
         }
         console.warn('[Mediabunny] Compression failed or bypassed. Falling back to FFmpeg.wasm...');
     } else {
-        console.info(`[Compression] Bypassing Mediabunny (${isFirefox ? 'Default on Firefox' : 'Forced FFmpeg in settings'}). Using FFmpeg.wasm.`);
+        console.info(`[Compression] Bypassing Mediabunny (Forced FFmpeg in settings). Using FFmpeg.wasm.`);
     }
 
     let lastAbort;
@@ -1083,7 +1075,7 @@ async function processVideoItem(item) {
 
         item.attempt = attempt;
         item.progress = 1;
-        item.stageText = attempt > 1 ? `Starting attempt ${attempt}...` : 'Starting...';
+        item.stageText = (!ffmpegInstance || !ffmpegInstance.loaded) ? 'Loading FFmpeg...' : (attempt > 1 ? `Starting attempt ${attempt}...` : 'Starting...');
         updateItemProgressUI(item);
         updateMainProgressBar();
 

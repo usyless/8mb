@@ -42,8 +42,7 @@
             </div>
 
             <div data-firefox>
-                <p>Using Firefox? Fast compression (Mediabunny) is disabled by default due to browser bugs.</p>
-                <p>You can attempt to enable "Force Mediabunny" in the settings, but it may produce broken videos.</p>
+                <p>Using Firefox? Mediabunny is now enabled by default. If output videos are broken, switch to FFmpeg manually in the settings (this only seems to be fixed on the latest Firefox versions, around 159 potentially).</p>
             </div>
 
             <div data-notfirefox>
@@ -99,11 +98,7 @@
 
 <template id="settingsTemplate">
     <div id="settingsMenu">
-        <div id="firefoxEngineSetting" data-firefox>
-            <label for="forceMediabunny">Force Mediabunny (default off, experimental - may produce broken videos)</label>
-            <input type="checkbox" id="forceMediabunny">
-        </div>
-        <div id="nonFirefoxEngineSetting" data-notfirefox>
+        <div>
             <label for="forceFFmpeg">Force FFmpeg.wasm (default off)</label>
             <input type="checkbox" id="forceFFmpeg">
         </div>
